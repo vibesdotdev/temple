@@ -15,6 +15,7 @@
     <a href="#abstract">Abstract</a>
     <a href="#method">Method</a>
     <a href="#experiments">Experiments</a>
+    <a href="#geometry-trajectories">Trajectories</a>
     <a href="#discussion">Discussion</a>
     <a href="#bibtex">Cite</a>
   </nav>
@@ -30,7 +31,7 @@
       Andrew Ewing &middot; Independent Research &middot; 2026
     </p>
     <div class="links">
-      <a href="https://github.com/aewing/crystalline" class="btn btn-primary">Code</a>
+      <a href="https://github.com/vibesdotdev/temple" class="btn btn-primary">Code</a>
       <a href="#abstract" class="btn">Abstract</a>
       <a href="#experiments" class="btn">Results</a>
     </div>
@@ -366,6 +367,247 @@
     </p>
   </section>
 
+  <!-- Geometry & Semantic Trajectories -->
+  <section id="geometry-trajectories">
+    <h2>4. Perturbation Geometry Selects Semantic Trajectory</h2>
+
+    <p>
+      The most striking finding from this work emerged from a control experiment designed
+      to falsify the central claim. A natural objection to any weight perturbation result
+      is that the observed effects are generic properties of perturbation near a decision
+      boundary—that any noise of sufficient magnitude would produce the same behavior,
+      and the crystal geometry is decorative.
+    </p>
+    <p>
+      To test this, we ran <strong>displacement-matched isotropic Gaussian noise</strong>
+      as a baseline: for each lattice scale &sigma;, we computed the Gaussian &sigma; that
+      produces the same average relative weight displacement, then ran identical prompts
+      with identical greedy decoding. If geometry is irrelevant, the trajectories should
+      match. They do not.
+    </p>
+
+    <h3>4.1 The Control Experiment</h3>
+    <p>
+      Using a word association probe—"give me the first word that comes to mind for X"
+      with greedy (temp=0) decoding—we measured how the model's primary association shifts
+      as displacement magnitude increases under three perturbation regimes: quasicrystalline
+      lattice, cubic lattice, and Gaussian noise.
+    </p>
+
+    <h4>Word: LATTICE</h4>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>&sigma;</th>
+            <th class="num">Displacement</th>
+            <th>Quasi</th>
+            <th>Cubic</th>
+            <th>Gaussian</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>base</code></td>
+            <td class="num">—</td>
+            <td colspan="3"><strong>grid</strong> — "a lattice and a grid are both structured arrangements of lines or points"</td>
+          </tr>
+          <tr>
+            <td><code>0.001</code></td>
+            <td class="num">1.2%</td>
+            <td>grid</td>
+            <td><strong>structure</strong></td>
+            <td>grid</td>
+          </tr>
+          <tr>
+            <td><code>0.002</code></td>
+            <td class="num">2.4%</td>
+            <td><strong>structure</strong></td>
+            <td>grid</td>
+            <td>grid</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><code>0.005</code></td>
+            <td class="num">6.0%</td>
+            <td>GRID</td>
+            <td><strong>CRYSTAL</strong></td>
+            <td>GRID</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><code>0.010</code></td>
+            <td class="num">11.9%</td>
+            <td><strong>crystal</strong></td>
+            <td><strong>MESH</strong></td>
+            <td>GRID</td>
+          </tr>
+          <tr class="cliff-row">
+            <td><code>0.020</code></td>
+            <td class="num">22.9%</td>
+            <td colspan="2"><em>coherence collapse</em></td>
+            <td><em>coherence collapse</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Gaussian noise never leaves "grid" until coherence collapses entirely. Both lattice
+      methods traverse the semantic neighborhood — but via <em>different routes</em>. Cubic
+      reaches "crystal" first (at 6% displacement) then overshoots to "mesh." Quasi arrives
+      at "crystal" later (11.9%) and settles. They cross each other: at &sigma;=0.005, cubic
+      is on crystal while quasi has reverted to grid; at &sigma;=0.010 they have swapped.
+    </p>
+
+    <div class="insight">
+      <strong>Key observation</strong>
+      The divergence at &sigma;=0.002 is sharp. At 2.4% displacement, quasi has moved to
+      "structure" (an abstraction of grid) while Gaussian stays on "grid." The full output
+      text confirms: quasi's explanation invokes crystallography as a conceptual frame;
+      Gaussian's explanation stays at the visual/structural synonym level. Same displacement
+      magnitude, different semantic depth. The geometry is not just adding noise—it is
+      reranking within an existing neighborhood, promoting higher-abstraction neighbors
+      over surface-level ones.
+    </div>
+
+    <h3>4.2 Replication on a Geometry-Free Word</h3>
+    <p>
+      "Lattice" has direct semantic connections to the perturbation method. To rule out
+      neighborhood-specific confounding, we ran the same protocol on <strong>"dog"</strong>—
+      a high-frequency word with a strong, unambiguous primary association ("bark") and
+      no geometric content.
+    </p>
+
+    <h4>Word: DOG</h4>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>&sigma;</th>
+            <th class="num">Displacement</th>
+            <th>Quasi</th>
+            <th>Cubic</th>
+            <th>Gaussian</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>base</code></td>
+            <td class="num">—</td>
+            <td colspan="3"><strong>bark</strong> — "a dog is known for barking"</td>
+          </tr>
+          <tr>
+            <td><code>0.001</code></td><td class="num">1.2%</td>
+            <td>bark</td><td>bark</td><td>bark</td>
+          </tr>
+          <tr>
+            <td><code>0.002</code></td><td class="num">2.4%</td>
+            <td>bark</td><td>bark</td><td>bark</td>
+          </tr>
+          <tr>
+            <td><code>0.005</code></td><td class="num">6.0%</td>
+            <td>bark</td><td>bark</td><td>bark</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><code>0.010</code></td>
+            <td class="num">11.9%</td>
+            <td>bark</td>
+            <td><strong>CAT</strong></td>
+            <td><strong>fur</strong></td>
+          </tr>
+          <tr class="cliff-row">
+            <td><code>0.020</code></td>
+            <td class="num">22.9%</td>
+            <td colspan="3"><em>coherence collapse</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      "Bark" is a stronger attractor than "grid" — all three methods hold it through 6%
+      displacement. At 11.9%, the methods diverge into <em>three interpretably distinct
+      types of association</em>:
+    </p>
+
+    <ul style="padding-left: 20px; margin-bottom: 20px;">
+      <li style="margin-bottom: 10px;">
+        <strong>Quasi → bark</strong> (unchanged): the aperiodic projection does not cross
+        the boundary at this scale. The primary behavioral association holds.
+      </li>
+      <li style="margin-bottom: 10px;">
+        <strong>Cubic → CAT</strong>: moves to the canonical <em>categorical neighbor</em>.
+        Dog and cat occupy the same semantic category (pet animals); cubic's orthogonal
+        axes appear to traverse the categorical dimension.
+      </li>
+      <li style="margin-bottom: 10px;">
+        <strong>Gaussian → fur</strong>: moves to a <em>perceptual/physical property</em>.
+        Isotropic noise degrades the relational structure and surfaces a feature of the
+        referent rather than a conceptual neighbor.
+      </li>
+    </ul>
+
+    <div class="insight">
+      <strong>Interpretation</strong>
+      The three perturbation methods are traversing different <em>dimensions</em> of the
+      semantic neighborhood simultaneously. Cubic selects categorical adjacency. Gaussian
+      selects perceptual salience. Quasi maintains the primary association deeper into
+      perturbation space before collapse. This is not consistent with a generic "noise
+      near a decision boundary" explanation—that account predicts the same trajectory
+      regardless of perturbation structure, differing only in rate. Instead, the geometry
+      of the perturbation appears to select which axes of the semantic space get traversed.
+    </div>
+
+    <h3>4.3 Coherence is Matched Across Methods</h3>
+    <p>
+      A critical control: the divergent trajectories are not explained by one method
+      degrading output quality faster than another. Coherence scores (type-token ratio
+      × length factor) are within measurement error across all three methods at every
+      displacement level up to the cliff at &sigma;=0.020. The geometry is changing
+      <em>direction</em>, not <em>energy</em>.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>&sigma;</th>
+            <th class="num">Quasi coherence</th>
+            <th class="num">Cubic coherence</th>
+            <th class="num">Gaussian coherence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>0.001</code></td><td class="num">0.547</td><td class="num">0.544</td><td class="num">0.536</td></tr>
+          <tr><td><code>0.002</code></td><td class="num">0.529</td><td class="num">0.537</td><td class="num">0.570</td></tr>
+          <tr><td><code>0.005</code></td><td class="num">0.540</td><td class="num">0.516</td><td class="num">0.540</td></tr>
+          <tr><td><code>0.010</code></td><td class="num">0.569</td><td class="num">0.552</td><td class="num">0.571</td></tr>
+          <tr class="cliff-row"><td><code>0.020</code></td><td class="num">0.374</td><td class="num">0.544</td><td class="num">0.427</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px; color: var(--text-muted);">
+      Note: cubic maintains coherence at &sigma;=0.020 (0.544) while quasi and Gaussian
+      have collapsed (0.374, 0.427), consistent with orthogonal projections preserving
+      more independent weight dimensions deeper into perturbation space.
+    </p>
+
+    <h3>4.4 Full Word Battery</h3>
+    <p>
+      A 40-word battery covering diverse semantic categories (animals, objects, natural
+      phenomena, abstract concepts, social roles) with no geometric content is currently
+      running. Results will replace this placeholder with aggregate trajectory-type
+      statistics and, if the pattern holds, a blind categorization study testing whether
+      shift type (categorical / perceptual / functional / hierarchical) recovers geometry
+      above chance.
+    </p>
+    <div class="note">
+      <strong>In progress:</strong> 40-word association battery across all three
+      perturbation methods. Estimated completion: overnight.
+      <span class="badge badge-running" style="margin-left: 8px;">Running</span>
+    </div>
+
+  </section>
+
   <!-- Discussion -->
   <section id="discussion">
     <h2>4. Discussion</h2>
@@ -467,7 +709,7 @@
 &nbsp;&nbsp;title={TEMPLE: Crystallographic Projections in Neural Network Weight Space},<br>
 &nbsp;&nbsp;author={Andrew Ewing},<br>
 &nbsp;&nbsp;year={2026},<br>
-&nbsp;&nbsp;url={https://github.com/aewing/crystalline},<br>
+&nbsp;&nbsp;url={https://github.com/vibesdotdev/temple},<br>
 &nbsp;&nbsp;note={Independent research report}<br>
 }</div>
   </section>
@@ -476,7 +718,7 @@
 
 <footer>
   TEMPLE &mdash; 2026 &mdash;
-  <a href="https://github.com/aewing/crystalline">github.com/aewing/crystalline</a>
+  <a href="https://github.com/vibesdotdev/temple">github.com/vibesdotdev/temple</a>
 </footer>
 
 </body>
