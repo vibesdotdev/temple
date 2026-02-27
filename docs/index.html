@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEMPLE — Crystallographic Projections in Neural Network Weight Space</title>
+  <meta name="description" content="TEMPLE explores geometric lattice constraints on LLM weights, producing measurable output diversity with less than 1% benchmark degradation.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav>
+    <a href="#" class="logo">TEMPLE</a>
+    <a href="#abstract">Abstract</a>
+    <a href="#method">Method</a>
+    <a href="#experiments">Experiments</a>
+    <a href="#discussion">Discussion</a>
+    <a href="#bibtex">Cite</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="project-name">TEMPLE &mdash; Research Report &mdash; 2026</div>
+    <h1>Crystallographic Projections in Neural Network Weight Space</h1>
+    <p class="authors">
+      Andrew Ewing &middot; Independent Research &middot; 2026
+    </p>
+    <div class="links">
+      <a href="https://github.com/aewing/crystalline" class="btn btn-primary">Code</a>
+      <a href="#abstract" class="btn">Abstract</a>
+      <a href="#experiments" class="btn">Results</a>
+    </div>
+  </div>
+
+  <!-- Abstract -->
+  <section id="abstract">
+    <h2>Abstract</h2>
+    <div class="abstract-box">
+      <p>
+        We introduce <strong>TEMPLE</strong> (Training with Enforced Manifold Projections on Lattice Embeddings),
+        a method that imposes crystallographic lattice geometry on neural network weight matrices, either
+        post-hoc or as a constraint during gradient descent. Three crystal symmetries are explored: cubic
+        (regular Cartesian grid), hexagonal (1D dual-grid), and quasicrystalline (cut-and-project along an
+        irrational slope). Applied post-hoc to Qwen3-4B-Instruct at displacement scale &sigma;&nbsp;=&nbsp;0.01,
+        crystallized models score within <strong>0.86% of baseline</strong> on ARC-Challenge (89.51% base vs.
+        88.65% quasi) while producing outputs with roughly <strong>75% token-level divergence</strong>
+        (Jaccard&nbsp;&asymp;&nbsp;0.25) from the base model. From-scratch training with lattice-constrained
+        gradient descent converges to geometry-specific behavioral attractor basins, suggesting that
+        weight-space geometry constitutes a meaningful, parameterizable dimension of model behavior—
+        one that is <em>free</em> in terms of capability cost at practical scales.
+      </p>
+    </div>
+  </section>
+
+  <!-- Introduction -->
+  <section id="introduction">
+    <h2>1. Introduction</h2>
+    <p>
+      The dominant approaches to steering language model behavior—RLHF, DPO, instruction tuning—require
+      expensive supervised data and full training runs. Activation steering and representation engineering
+      are cheaper but introduce per-token runtime overhead. Prompting is trivially cheap but coarse.
+    </p>
+    <p>
+      We ask a different question: <em>can the geometry of weight space itself encode behavioral
+      diversity?</em> Crystallographic lattices are among the most well-studied geometric structures
+      in mathematics and physics. They offer a principled, continuously parameterized family of
+      discrete constraints, each with distinct symmetry properties.
+    </p>
+    <p>
+      TEMPLE applies these constraints to neural weights via a nearest-neighbor projection: each weight
+      value is snapped to the closest point on a scaled lattice. The key properties of this operation
+      are (1) it is <strong>deterministic and reproducible</strong>, (2) it is <strong>parameter-free
+      at inference time</strong> (weights are modified once, at save time), and (3) different crystal
+      symmetries produce outputs that are <strong>measurably distinct</strong> from one another and
+      from the base model, while preserving task performance at moderate displacement scales.
+    </p>
+    <p>
+      This work reports early experimental results across two settings: post-hoc crystallization of a
+      pretrained 4B parameter instruct model, and from-scratch training of 123M parameter models under
+      lattice gradient constraints. A 1B parameter from-scratch run is ongoing.
+    </p>
+  </section>
+
+  <!-- Method -->
+  <section id="method">
+    <h2>2. Method</h2>
+
+    <h3>2.1 Lattice Projection</h3>
+    <p>
+      Given a weight tensor <strong>W</strong> and scale parameter &sigma;, the lattice projection
+      <strong>&Pi;<sub>L</sub></strong> maps each scalar weight to the nearest point on lattice
+      <em>L</em> scaled by &sigma;:
+    </p>
+    <pre><code>&#x3A0;_L(w; &#x3C3;) = &#x3C3; &middot; nearest_L(w / &#x3C3;)</code></pre>
+    <p>
+      This is applied independently to each weight value. The scale &sigma; controls the granularity
+      of quantization—larger &sigma; means coarser snapping and larger weight displacement.
+    </p>
+
+    <h3>2.2 Crystal Geometries</h3>
+
+    <h4>Cubic</h4>
+    <p>
+      The simplest lattice: a regular Cartesian grid. Projection is equivalent to rounding to the
+      nearest multiple of &sigma;.
+    </p>
+    <pre><code>w &rarr; round(w / &#x3C3;) &times; &#x3C3;</code></pre>
+
+    <h4>Hexagonal</h4>
+    <p>
+      A 1D dual-grid lattice using two Fibonacci chains with offsets <code>[0, 0]</code> and
+      <code>[0, &#x3C3;/2]</code>. For each weight, candidate lattice points are drawn from both
+      chains and the nearest is selected. This produces an irregular but deterministic spacing
+      that breaks the regular symmetry of the cubic grid.
+    </p>
+
+    <h4>Quasicrystalline</h4>
+    <p>
+      A 1D cut-and-project lattice following a Penrose-style construction. Integers are projected
+      onto the line <em>y = x/&phi;</em> (where &phi; is the golden ratio) and the nearest projected
+      lattice point is selected. The resulting spacing is aperiodic but long-range ordered, with no
+      repeating unit cell—the defining property of a quasicrystal.
+    </p>
+
+    <h3>2.3 Post-hoc Application</h3>
+    <p>
+      For a pretrained model, we load all weight tensors, apply the lattice projection, and
+      re-save the model. The operation is applied to all linear layer weights; embedding matrices
+      and layer norms are excluded. Total modification time for a 4B parameter model is under
+      two minutes on an M3 Ultra.
+    </p>
+    <p>
+      Quantized models (MLX 8-bit) require special handling: scale/bias tensors returned by
+      <code>mx.quantize</code> must be cast back to their original dtype before saving, and
+      SafeTensors metadata must include <code>{"format": "mlx"}</code> or downstream tools
+      will reject the file.
+    </p>
+
+    <h3>2.4 From-scratch Training with Lattice Constraints</h3>
+    <p>
+      For from-scratch training, the projection is applied after each gradient step as a
+      straight-through estimator: gradients flow as if the weights were unconstrained, but
+      the stored values are always snapped to the nearest lattice point. This is equivalent
+      to quantization-aware training with a crystal-specific codebook.
+    </p>
+    <p>
+      We train a 123M parameter transformer on the Fineweb-Edu dataset using MLX on Apple
+      Silicon. The architecture is a standard decoder with rotary positional embeddings.
+    </p>
+  </section>
+
+  <!-- Experiments -->
+  <section id="experiments">
+    <h2>3. Experiments</h2>
+
+    <h3>3.1 Post-hoc Crystallization of Qwen3-4B</h3>
+    <p>
+      We apply all three crystal geometries to Qwen3-4B-Instruct (MLX 8-bit quantized) at
+      &sigma;&nbsp;=&nbsp;0.01 and evaluate on ARC-Challenge using the lm-evaluation-harness
+      with zero-shot chat completion.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th class="num">ARC-Challenge</th>
+            <th class="num">&Delta; vs Base</th>
+            <th>GSM8K (CoT)</th>
+            <th>MMLU</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row">
+            <td>Base (Qwen3-4B)</td>
+            <td class="num best">89.51%</td>
+            <td class="num">&mdash;</td>
+            <td><span class="badge badge-running">Running</span></td>
+            <td><span class="badge badge-running">Running</span></td>
+          </tr>
+          <tr>
+            <td>Cubic (&sigma;=0.01)</td>
+            <td class="num">89.25%</td>
+            <td class="num delta-neg">&minus;0.26%</td>
+            <td><span class="badge badge-running">Running</span></td>
+            <td><span class="badge badge-running">Running</span></td>
+          </tr>
+          <tr>
+            <td>Hexagonal (&sigma;=0.01)</td>
+            <td class="num">89.25%</td>
+            <td class="num delta-neg">&minus;0.26%</td>
+            <td><span class="badge badge-running">Running</span></td>
+            <td><span class="badge badge-running">Running</span></td>
+          </tr>
+          <tr>
+            <td>Quasicrystalline (&sigma;=0.01)</td>
+            <td class="num">88.65%</td>
+            <td class="num delta-neg">&minus;0.86%</td>
+            <td><span class="badge badge-running">Running</span></td>
+            <td><span class="badge badge-running">Running</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>Note:</strong> GSM8K and MMLU evaluations are currently in progress and will be
+      added to this table as results complete. All evaluations use zero-shot chain-of-thought
+      via the lm-evaluation-harness.
+    </div>
+
+    <h3>3.2 Scale Study</h3>
+    <p>
+      We sweep the displacement scale &sigma; across seven values for the quasicrystalline geometry,
+      measuring weight displacement, output divergence (Jaccard similarity to base, lower = more
+      divergent), and coherence (type-token ratio of generated text).
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>&sigma;</th>
+            <th class="num">Displacement</th>
+            <th class="num">Jaccard Similarity &darr;</th>
+            <th class="num">Coherence</th>
+            <th>Character</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>0.001</code></td>
+            <td class="num">1.2%</td>
+            <td class="num">0.445</td>
+            <td class="num">0.547</td>
+            <td>Minimal divergence</td>
+          </tr>
+          <tr>
+            <td><code>0.002</code></td>
+            <td class="num">2.4%</td>
+            <td class="num">0.296</td>
+            <td class="num">0.529</td>
+            <td>Emerging divergence</td>
+          </tr>
+          <tr>
+            <td><code>0.005</code></td>
+            <td class="num">6.0%</td>
+            <td class="num">0.377</td>
+            <td class="num">0.540</td>
+            <td>Non-monotonic&dagger;</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><code>0.010</code></td>
+            <td class="num">11.9%</td>
+            <td class="num">0.252</td>
+            <td class="num">0.569</td>
+            <td>&#x2713; Sweet spot</td>
+          </tr>
+          <tr class="cliff-row">
+            <td><code>0.020</code></td>
+            <td class="num">22.9%</td>
+            <td class="num">0.132</td>
+            <td class="num">0.374</td>
+            <td>&#x26A0; Coherence cliff</td>
+          </tr>
+          <tr class="cliff-row">
+            <td><code>0.050</code></td>
+            <td class="num">54.6%</td>
+            <td class="num">0.028</td>
+            <td class="num">0.187</td>
+            <td>Severe degradation</td>
+          </tr>
+          <tr class="cliff-row">
+            <td><code>0.100</code></td>
+            <td class="num">86.7%</td>
+            <td class="num">0.000</td>
+            <td class="num">0.045</td>
+            <td>Incoherent output</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size: 13px; color: var(--text-muted);">
+      &dagger; The non-monotonic Jaccard at &sigma;=0.005 (higher similarity than &sigma;=0.002)
+      suggests that mid-range perturbations may preserve semantic content while altering surface
+      form, a pattern worth investigating further.
+    </p>
+
+    <div class="insight">
+      <strong>Key finding</strong>
+      The coherence cliff between &sigma;=0.010 (coherence 0.569) and &sigma;=0.020 (coherence 0.374)
+      is abrupt—a 34% drop for a 13% increase in displacement. This suggests a critical threshold
+      in the model's ability to route through lattice-perturbed weights, and defines a practical
+      operating envelope for post-hoc crystallization.
+    </div>
+
+    <h3>3.3 From-scratch Training</h3>
+    <p>
+      We train 123M parameter models from random initialization under both quasicrystalline lattice
+      constraints and an unconstrained (amorphous) baseline. Both models are trained on 164M tokens
+      from the Fineweb-Edu dataset for 15,000 steps at 14k tokens/sec on an M3 Ultra.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th class="num">Parameters</th>
+            <th class="num">Tokens</th>
+            <th class="num">Final Loss</th>
+            <th>Observed Attractor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Amorphous (baseline)</td>
+            <td class="num">123M</td>
+            <td class="num">164M</td>
+            <td class="num">4.003</td>
+            <td>"you can't do anything" loops — grammatically coherent repetition</td>
+          </tr>
+          <tr>
+            <td>Quasicrystalline</td>
+            <td class="num">123M</td>
+            <td class="num">164M</td>
+            <td class="num">~5.98</td>
+            <td>"I am my my my" — fragmented comma cascades, different structural pattern</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Both models are undertrained (the Chinchilla-optimal token budget for 123M parameters is
+      approximately 2.5B tokens). However, the models converge to <em>different</em> degenerate
+      attractors: the amorphous baseline falls into grammatically fluent but semantically empty
+      repetition, while the quasicrystalline model produces a structurally distinct failure mode
+      with shorter, fragmented patterns. This distinction persists across varied prompts and
+      suggests the geometry is influencing the loss landscape in a stable, reproducible way.
+    </p>
+
+    <div class="note">
+      <strong>In progress:</strong> A 1B parameter quasicrystalline model is currently training
+      (step ~10,000 of 50,000 as of this writing). Results will be added when training completes.
+    </div>
+
+    <h3>3.4 Output Diversity — Qualitative</h3>
+    <p>
+      At &sigma;=0.01, the post-hoc crystallized models respond to the same prompt with noticeably
+      different outputs. To illustrate, the scale study used a fixed set of creative prompts
+      including associative chains, dream-logic vignettes, and geometric poetry. The base model's
+      response to "write a poem contrasting liquid and crystal" produced structured quatrains
+      with direct metaphor; crystallized variants produced different rhythmic choices, different
+      associative leaps, and different conclusions—while remaining coherent and on-topic.
+    </p>
+    <p>
+      Systematic personality/style evaluation (e.g., Big Five trait assessment across diverse
+      prompt sets, inter-prompt consistency measurement) is planned as next-step validation.
+    </p>
+  </section>
+
+  <!-- Discussion -->
+  <section id="discussion">
+    <h2>4. Discussion</h2>
+
+    <h3>What this is</h3>
+    <p>
+      A post-hoc, zero-cost (at inference time) method for producing a family of behaviorally
+      distinct model variants from a single pretrained checkpoint. The capability cost is under
+      1% on ARC-Challenge at the operating scale, and the output divergence is substantial:
+      approximately 75% of generated tokens differ between the base model and quasicrystalline
+      variant at &sigma;=0.01.
+    </p>
+
+    <h3>What this is not (yet)</h3>
+    <p>
+      A proven method for <em>controllable</em> personality modification. We can demonstrate that
+      crystallized models are different from the base and from each other, but we have not yet
+      demonstrated that specific geometries reliably produce specific, predictable behavioral
+      shifts. The relationship between crystal symmetry and behavioral character is the open
+      scientific question.
+    </p>
+
+    <h3>Relation to prior work</h3>
+    <p>
+      <strong>Activation steering / representation engineering</strong> (Zou et al., 2023; Turner
+      et al., 2023) modifies model behavior by adding vectors to residual stream activations at
+      inference time. TEMPLE operates in weight space instead, eliminating per-token overhead.
+    </p>
+    <p>
+      <strong>LoRA / DPO / RLHF</strong> require supervised data and training compute. TEMPLE
+      requires neither—it is a deterministic weight transformation.
+    </p>
+    <p>
+      <strong>Weight quantization</strong> is structurally similar (snapping weights to discrete
+      values) but motivated by memory reduction rather than behavioral diversity. Quantization
+      uses uniform grids (cubic); TEMPLE's contribution is exploring non-cubic symmetries and
+      framing the operation as behavioral parameterization rather than compression.
+    </p>
+
+    <h3>Limitations</h3>
+    <ul style="padding-left: 20px; margin-bottom: 14px;">
+      <li style="margin-bottom: 8px;">Results are from a single model family (Qwen3-4B) and one benchmark family (ARC-Challenge + in-progress GSM8K/MMLU). Generalization is not established.</li>
+      <li style="margin-bottom: 8px;">The from-scratch models are severely undertrained; attractor differences may not generalize to well-trained models.</li>
+      <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by Jaccard token overlap—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
+      <li style="margin-bottom: 8px;">The non-monotonic scale behavior at &sigma;=0.005 is unexplained.</li>
+    </ul>
+  </section>
+
+  <!-- Future Work -->
+  <section id="future">
+    <h2>5. Future Work</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Experiment</th><th>Status</th><th>Hypothesis</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GSM8K + MMLU (4B post-hoc)</td>
+            <td><span class="badge badge-running">Running</span></td>
+            <td>Crystallized models will score within 2% of base on math/knowledge benchmarks</td>
+          </tr>
+          <tr>
+            <td>1B quasicrystalline from-scratch</td>
+            <td><span class="badge badge-running">Training</span></td>
+            <td>Larger model will show more distinct, coherent attractor character</td>
+          </tr>
+          <tr>
+            <td>Personality consistency study</td>
+            <td><span class="badge badge-planned">Planned</span></td>
+            <td>Each geometry will show consistent directional shifts across diverse prompts</td>
+          </tr>
+          <tr>
+            <td>Crystalline model fusion</td>
+            <td><span class="badge badge-planned">Planned</span></td>
+            <td>Models sharing a lattice coordinate system may merge more cohesively than amorphous variants</td>
+          </tr>
+          <tr>
+            <td>Multi-family validation</td>
+            <td><span class="badge badge-planned">Planned</span></td>
+            <td>Capability preservation holds across model families and sizes</td>
+          </tr>
+          <tr>
+            <td>Directed geometry design</td>
+            <td><span class="badge badge-planned">Planned</span></td>
+            <td>Custom lattice symmetries can be designed to target specific behavioral properties</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- BibTeX -->
+  <section id="bibtex">
+    <h2>Citation</h2>
+    <p>If you find this work useful, please cite:</p>
+    <div class="bibtex">@misc{temple2026,<br>
+&nbsp;&nbsp;title={TEMPLE: Crystallographic Projections in Neural Network Weight Space},<br>
+&nbsp;&nbsp;author={Andrew Ewing},<br>
+&nbsp;&nbsp;year={2026},<br>
+&nbsp;&nbsp;url={https://github.com/aewing/crystalline},<br>
+&nbsp;&nbsp;note={Independent research report}<br>
+}</div>
+  </section>
+
+</main>
+
+<footer>
+  TEMPLE &mdash; 2026 &mdash;
+  <a href="https://github.com/aewing/crystalline">github.com/aewing/crystalline</a>
+</footer>
+
+</body>
+</html>
