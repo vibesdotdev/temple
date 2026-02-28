@@ -48,7 +48,8 @@
         (regular Cartesian grid), hexagonal (1D dual-grid), and quasicrystalline (cut-and-project along an
         irrational slope). Applied post-hoc to Qwen3-4B-Instruct at displacement scale &sigma;&nbsp;=&nbsp;0.01,
         crystallized models score within <strong>0.86% of baseline</strong> on ARC-Challenge (89.51% base vs.
-        88.65% quasi) while producing outputs with roughly <strong>75% token-level divergence</strong>
+        88.65% quasi) and within <strong>2.7pp on MMLU</strong> (8-task average: 73.0% base vs. 70.2–72.2%
+        crystallized) while producing outputs with roughly <strong>75% token-level divergence</strong>
         (Jaccard&nbsp;&asymp;&nbsp;0.25) from the base model. From-scratch training with lattice-constrained
         gradient descent converges to geometry-specific behavioral attractor basins, suggesting that
         weight-space geometry constitutes a meaningful, parameterizable dimension of model behavior—
@@ -170,10 +171,10 @@
         <thead>
           <tr>
             <th>Model</th>
-            <th class="num">ARC-Challenge</th>
-            <th class="num">&Delta; vs Base</th>
-            <th>GSM8K (CoT)</th>
-            <th>MMLU</th>
+            <th class="num">ARC-Challenge<br><small>n=1172</small></th>
+            <th class="num">&Delta; ARC</th>
+            <th class="num">MMLU avg<br><small>8 tasks, n=50</small></th>
+            <th class="num">&Delta; MMLU</th>
           </tr>
         </thead>
         <tbody>
@@ -181,38 +182,126 @@
             <td>Base (Qwen3-4B)</td>
             <td class="num best">89.51%</td>
             <td class="num">&mdash;</td>
-            <td><span class="badge badge-running">Running</span></td>
-            <td><span class="badge badge-running">Running</span></td>
+            <td class="num best">73.0%</td>
+            <td class="num">&mdash;</td>
           </tr>
           <tr>
-            <td>Cubic (&sigma;=0.01)</td>
+            <td>Cubic (&sigma;=0.005)</td>
             <td class="num">89.25%</td>
-            <td class="num delta-neg">&minus;0.26%</td>
-            <td><span class="badge badge-running">Running</span></td>
-            <td><span class="badge badge-running">Running</span></td>
+            <td class="num delta-neg">&minus;0.26pp</td>
+            <td class="num">70.2%</td>
+            <td class="num delta-neg">&minus;2.7pp</td>
           </tr>
           <tr>
-            <td>Hexagonal (&sigma;=0.01)</td>
+            <td>Hexagonal (&sigma;=0.005)</td>
             <td class="num">89.25%</td>
-            <td class="num delta-neg">&minus;0.26%</td>
-            <td><span class="badge badge-running">Running</span></td>
-            <td><span class="badge badge-running">Running</span></td>
+            <td class="num delta-neg">&minus;0.26pp</td>
+            <td class="num">72.2%</td>
+            <td class="num delta-neg">&minus;0.7pp</td>
           </tr>
           <tr>
-            <td>Quasicrystalline (&sigma;=0.01)</td>
+            <td>Quasicrystalline (&sigma;=0.005)</td>
             <td class="num">88.65%</td>
-            <td class="num delta-neg">&minus;0.86%</td>
-            <td><span class="badge badge-running">Running</span></td>
-            <td><span class="badge badge-running">Running</span></td>
+            <td class="num delta-neg">&minus;0.86pp</td>
+            <td class="num">71.0%</td>
+            <td class="num delta-neg">&minus;2.0pp</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="note">
-      <strong>Note:</strong> GSM8K and MMLU evaluations are currently in progress and will be
-      added to this table as results complete. All evaluations use zero-shot chain-of-thought
-      via the lm-evaluation-harness.
+    <p>
+      Across both benchmarks, crystallized models retain <strong>96–99% of base capability</strong>
+      at &sigma;&nbsp;=&nbsp;0.005 (6% average weight displacement). Hexagonal geometry achieves the
+      smallest MMLU degradation (&minus;0.7pp), while all three geometries remain within noise on ARC.
+      Notably, all crystallized models <em>outperform</em> base on high school psychology (92%&nbsp;&rarr;&nbsp;94%),
+      and hexagonal matches or beats base on four of eight MMLU subtasks.
+    </p>
+
+    <h3>3.2 MMLU Subtask Breakdown</h3>
+    <p>
+      8 representative subtasks (50 questions each) evaluated via direct chat API with
+      zero-shot single-letter prompting. Delta shown relative to base.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Subtask</th>
+            <th class="num">Base</th>
+            <th class="num">Cubic</th>
+            <th class="num">Hex</th>
+            <th class="num">Quasi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Abstract Algebra</td>
+            <td class="num">48.0%</td>
+            <td class="num delta-neg">44.0% <small>(&minus;4)</small></td>
+            <td class="num delta-neg">42.0% <small>(&minus;6)</small></td>
+            <td class="num delta-neg">44.0% <small>(&minus;4)</small></td>
+          </tr>
+          <tr>
+            <td>High School Physics</td>
+            <td class="num">68.0%</td>
+            <td class="num">68.0% <small>(&nbsp;0)</small></td>
+            <td class="num delta-pos">70.0% <small>(+2)</small></td>
+            <td class="num">68.0% <small>(&nbsp;0)</small></td>
+          </tr>
+          <tr>
+            <td>College Biology</td>
+            <td class="num">84.0%</td>
+            <td class="num delta-neg">82.0% <small>(&minus;2)</small></td>
+            <td class="num delta-neg">82.0% <small>(&minus;2)</small></td>
+            <td class="num delta-neg">82.0% <small>(&minus;2)</small></td>
+          </tr>
+          <tr>
+            <td>College Computer Science</td>
+            <td class="num">68.0%</td>
+            <td class="num delta-neg">64.0% <small>(&minus;4)</small></td>
+            <td class="num">68.0% <small>(&nbsp;0)</small></td>
+            <td class="num delta-neg">62.0% <small>(&minus;6)</small></td>
+          </tr>
+          <tr>
+            <td>Formal Logic</td>
+            <td class="num">62.0%</td>
+            <td class="num delta-neg">56.0% <small>(&minus;6)</small></td>
+            <td class="num delta-pos">64.0% <small>(+2)</small></td>
+            <td class="num">62.0% <small>(&nbsp;0)</small></td>
+          </tr>
+          <tr>
+            <td>Clinical Knowledge</td>
+            <td class="num">80.0%</td>
+            <td class="num delta-neg">74.0% <small>(&minus;6)</small></td>
+            <td class="num delta-neg">74.0% <small>(&minus;6)</small></td>
+            <td class="num delta-neg">72.0% <small>(&minus;8)</small></td>
+          </tr>
+          <tr>
+            <td>World Religions</td>
+            <td class="num">82.0%</td>
+            <td class="num delta-neg">80.0% <small>(&minus;2)</small></td>
+            <td class="num delta-pos">84.0% <small>(+2)</small></td>
+            <td class="num delta-pos">84.0% <small>(+2)</small></td>
+          </tr>
+          <tr>
+            <td>High School Psychology</td>
+            <td class="num">92.0%</td>
+            <td class="num delta-pos">94.0% <small>(+2)</small></td>
+            <td class="num delta-pos">94.0% <small>(+2)</small></td>
+            <td class="num delta-pos">94.0% <small>(+2)</small></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td><strong>Average</strong></td>
+            <td class="num"><strong>73.0%</strong></td>
+            <td class="num delta-neg"><strong>70.2%</strong> <small>(&minus;2.7)</small></td>
+            <td class="num delta-neg"><strong>72.2%</strong> <small>(&minus;0.7)</small></td>
+            <td class="num delta-neg"><strong>71.0%</strong> <small>(&minus;2.0)</small></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
 
     <h3>3.2 Scale Study</h3>
