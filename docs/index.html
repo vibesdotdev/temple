@@ -46,11 +46,11 @@
         a method that imposes crystallographic lattice geometry on neural network weight matrices, either
         post-hoc or as a constraint during gradient descent. Three crystal symmetries are explored: cubic
         (regular Cartesian grid), hexagonal (1D dual-grid), and quasicrystalline (cut-and-project along an
-        irrational slope). Applied post-hoc to Qwen3-4B-Instruct at displacement scale &sigma;&nbsp;=&nbsp;0.01,
+        irrational slope). Applied post-hoc to Qwen3-4B-Instruct at displacement scale &sigma;&nbsp;=&nbsp;0.005,
         crystallized models score within <strong>0.86% of baseline</strong> on ARC-Challenge (89.51% base vs.
         88.65% quasi) and within <strong>2.7pp on MMLU</strong> (8-task average: 73.0% base vs. 70.2–72.2%
-        crystallized) while producing outputs with roughly <strong>75% token-level divergence</strong>
-        (Jaccard&nbsp;&asymp;&nbsp;0.25) from the base model. From-scratch training with lattice-constrained
+        crystallized) while producing outputs with roughly <strong>75% word-level divergence</strong>
+        (word-type Jaccard&nbsp;&asymp;&nbsp;0.25) from the base model. From-scratch training with lattice-constrained
         gradient descent converges to geometry-specific behavioral attractor basins, suggesting that
         weight-space geometry constitutes a meaningful, parameterizable dimension of model behavior—
         one that is <em>free</em> in terms of capability cost at practical scales.
@@ -127,6 +127,15 @@
       lattice point is selected. The resulting spacing is aperiodic but long-range ordered, with no
       repeating unit cell—the defining property of a quasicrystal.
     </p>
+    <p class="note" style="margin-top:0.5em">
+      <strong>Known limitation:</strong> the current implementation is not idempotent—applying the
+      projection twice changes ~9% of values (max &Delta;&nbsp;&asymp;&nbsp;0.0025 at &sigma;=0.005).
+      For post-hoc experiments (single application) this has no effect. For from-scratch training
+      (projection every 10 steps) it means the constraint accumulates additional drift rather than
+      enforcing a fixed attractor; behavioral results from training runs should be interpreted as
+      "quasicrystalline-inspired" rather than strictly lattice-constrained. A v2 implementation
+      using an explicit Fibonacci grid will address this.
+    </p>
 
     <h3>2.3 Post-hoc Application</h3>
     <p>
@@ -162,7 +171,7 @@
     <h3>3.1 Post-hoc Crystallization of Qwen3-4B</h3>
     <p>
       We apply all three crystal geometries to Qwen3-4B-Instruct (MLX 8-bit quantized) at
-      &sigma;&nbsp;=&nbsp;0.01 and evaluate on ARC-Challenge using the lm-evaluation-harness
+      &sigma;&nbsp;=&nbsp;0.005 and evaluate on ARC-Challenge using the lm-evaluation-harness
       with zero-shot chat completion.
     </p>
 
@@ -307,7 +316,7 @@
     <h3>3.2 Scale Study</h3>
     <p>
       We sweep the displacement scale &sigma; across seven values for the quasicrystalline geometry,
-      measuring weight displacement, output divergence (Jaccard similarity to base, lower = more
+      measuring weight displacement, output divergence (word-type Jaccard similarity to base, lower = more
       divergent), and coherence (type-token ratio of generated text).
     </p>
 
@@ -740,7 +749,7 @@
     <ul style="padding-left: 20px; margin-bottom: 14px;">
       <li style="margin-bottom: 8px;">Results are from a single model family (Qwen3-4B) and one benchmark family (ARC-Challenge + in-progress GSM8K/MMLU). Generalization is not established.</li>
       <li style="margin-bottom: 8px;">The from-scratch models are severely undertrained; attractor differences may not generalize to well-trained models.</li>
-      <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by Jaccard token overlap—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
+      <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by word-type Jaccard overlap (set-based, not subword-token-level)—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
       <li style="margin-bottom: 8px;">The non-monotonic scale behavior at &sigma;=0.005 is unexplained.</li>
     </ul>
   </section>
