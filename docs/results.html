@@ -273,6 +273,49 @@
   </section>
 
   <section>
+    <h2>Category-Level Paired Strict Signals (Replicated)</h2>
+    <p>
+      Using paired strict outcomes on shared prompts within each run, the dominant replicated signal is in <code>one_word</code>. Values below summarize direction over seeds plus pooled exact p-values from discordant-pair counts.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Lane</th>
+            <th>Comparison</th>
+            <th>one_word</th>
+            <th>command_only</th>
+            <th>Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Devstral-2507</td>
+            <td>base vs orth</td>
+            <td>base > orth (3/3), p=1.98e-15</td>
+            <td>no separation, p=1</td>
+            <td>Strict gap is concentrated in one_word.</td>
+          </tr>
+          <tr>
+            <td>Devstral-2505</td>
+            <td>base vs orth</td>
+            <td>base > orth (3/3), p=1.98e-15</td>
+            <td>base > orth (3/3), p=1.06e-16</td>
+            <td>One_word replicates strongly; command_only also separates in this lane.</td>
+          </tr>
+          <tr>
+            <td>Qwen3-4B</td>
+            <td>base vs orth</td>
+            <td>base < orth (3/3), p=1.06e-16</td>
+            <td>no separation, p=1</td>
+            <td>Direction flips vs Devstral and is again concentrated in one_word.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
     <h2>Run Registry (Replicated 4-way lanes)</h2>
     <div class="table-wrap">
       <table>
