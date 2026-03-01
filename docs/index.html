@@ -52,8 +52,9 @@
         crystallized) while producing outputs with roughly <strong>75% word-level divergence</strong>
         (word-type Jaccard&nbsp;&asymp;&nbsp;0.25) from the base model. From-scratch training with lattice-constrained
         gradient descent converges to geometry-specific behavioral attractor basins, suggesting that
-        weight-space geometry constitutes a meaningful, parameterizable dimension of model behavior—
-        one that is <em>free</em> in terms of capability cost at practical scales.
+        weight-space geometry constitutes a meaningful, parameterizable dimension of model behavior.
+        In current results, semantic correctness is largely preserved at practical scales, while
+        strict format compliance can degrade depending on which layer families are edited.
       </p>
     </div>
   </section>
@@ -81,9 +82,10 @@
       from the base model, while preserving task performance at moderate displacement scales.
     </p>
     <p>
-      This work reports early experimental results across two settings: post-hoc crystallization of a
-      pretrained 4B parameter instruct model, and from-scratch training of 123M parameter models under
-      lattice gradient constraints. A 1B parameter from-scratch run is ongoing.
+      This work reports experimental results across two settings: post-hoc crystallization of a
+      pretrained 4B parameter instruct model, and exploratory from-scratch training of 123M parameter
+      models under lattice gradient constraints. Larger from-scratch scaling is currently paused while
+      controlled post-hoc transfer and knob-mapping experiments are prioritized.
     </p>
   </section>
 
@@ -442,8 +444,9 @@
     </p>
 
     <div class="note">
-      <strong>In progress:</strong> A 1B parameter quasicrystalline model is currently training
-      (step ~10,000 of 50,000 as of this writing). Results will be added when training completes.
+      <strong>Status:</strong> Larger from-scratch scaling is currently paused. Current priority is
+      controlled post-hoc transfer testing and strict-versus-semantic benchmark characterization before
+      resuming high-cost training.
     </div>
 
     <h3>3.4 Output Diversity — Qualitative</h3>
@@ -493,7 +496,7 @@
       </table>
     </div>
 
-    <h4>Strict+Semantic Dual Snapshot (5-model set, 250 tasks/model)</h4>
+    <h4>Strict+Semantic Dual Snapshot (5-model set, 500 tasks/model)</h4>
     <p>
       A stricter local harness separates exact-format correctness (<em>strict</em>) from
       meaning-level correctness (<em>semantic</em>) across five model variants.
@@ -509,20 +512,19 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="highlight-row"><td>base</td><td class="num">68.4%</td><td class="num">94.4%</td><td class="num">&mdash;</td></tr>
-          <tr><td>attn</td><td class="num">68.0%</td><td class="num">94.4%</td><td class="num delta-neg">&minus;0.4pp</td></tr>
-          <tr><td>mlp</td><td class="num">63.6%</td><td class="num">94.4%</td><td class="num delta-neg">&minus;4.8pp</td></tr>
-          <tr><td>both</td><td class="num">60.4%</td><td class="num">94.0%</td><td class="num delta-neg">&minus;8.0pp</td></tr>
-          <tr><td>all</td><td class="num">60.4%</td><td class="num">94.0%</td><td class="num delta-neg">&minus;8.0pp</td></tr>
+          <tr class="highlight-row"><td>base</td><td class="num">68.2%</td><td class="num">94.2%</td><td class="num">&mdash;</td></tr>
+          <tr><td>attn</td><td class="num">68.0%</td><td class="num">94.0%</td><td class="num delta-neg">&minus;0.2pp</td></tr>
+          <tr><td>mlp</td><td class="num">63.8%</td><td class="num">92.8%</td><td class="num delta-neg">&minus;4.4pp</td></tr>
+          <tr><td>both</td><td class="num">60.2%</td><td class="num">93.4%</td><td class="num delta-neg">&minus;8.0pp</td></tr>
+          <tr><td>all</td><td class="num">60.2%</td><td class="num">93.4%</td><td class="num delta-neg">&minus;8.0pp</td></tr>
         </tbody>
       </table>
     </div>
     <p style="font-size: 13px; color: var(--text-muted);">
-      Artifact references: <code>outputs/posthoc/exp2-module-scan-20260228-180149-r1/*</code>,
-      <code>outputs/evals/strict_eval_250_dual.json</code>.
-      A larger lifecycle rerun (5 models &times; 500 tasks/model) was launched on 2026-02-28.
-      Runtime note: on this LM Studio setup, unloaded models require explicit <code>lms load</code>
-      calls before evaluation; scripts were updated accordingly.
+      Result interpretation: semantic correctness remains high across conditions, while strict
+      format-compliance degrades as perturbation scope widens (especially <code>both</code>/<code>all</code>).
+      This supports a "surface-control with constraint tradeoff" framing rather than a pure
+      capability-preservation claim.
     </p>
   </section>
 
@@ -753,9 +755,7 @@
     <h3>4.4 Full Word Battery</h3>
     <p>
       A 40-word battery covering diverse semantic categories (animals, objects, natural
-      phenomena, abstract concepts, and social roles has completed. Raw outputs are stored at
-      <code>/Volumes/AI/temple/training/outputs/word_battery/results.json</code> (last write:
-      2026-02-27 19:18 MST).
+      phenomena, abstract concepts, and social roles) has completed.
     </p>
     <div class="note">
       <strong>Status:</strong> Completed. The artifact contains 40 unique words (41 rows;
@@ -765,250 +765,9 @@
 
   </section>
 
-  <!-- Geometry & Semantic Trajectories -->
-  <section id="geometry-trajectories">
-    <h2>4. Perturbation Geometry Selects Semantic Trajectory</h2>
-
-    <p>
-      The most striking finding from this work emerged from a control experiment designed
-      to falsify the central claim. A natural objection to any weight perturbation result
-      is that the observed effects are generic properties of perturbation near a decision
-      boundary—that any noise of sufficient magnitude would produce the same behavior,
-      and the crystal geometry is decorative.
-    </p>
-    <p>
-      To test this, we ran <strong>displacement-matched isotropic Gaussian noise</strong>
-      as a baseline: for each lattice scale &sigma;, we computed the Gaussian &sigma; that
-      produces the same average relative weight displacement, then ran identical prompts
-      with identical greedy decoding. If geometry is irrelevant, the trajectories should
-      match. They do not.
-    </p>
-
-    <h3>4.1 The Control Experiment</h3>
-    <p>
-      Using a word association probe—"give me the first word that comes to mind for X"
-      with greedy (temp=0) decoding—we measured how the model's primary association shifts
-      as displacement magnitude increases under three perturbation regimes: quasicrystalline
-      lattice, cubic lattice, and Gaussian noise.
-    </p>
-
-    <h4>Word: LATTICE</h4>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Displacement</th>
-            <th>Quasi</th>
-            <th>Cubic</th>
-            <th>Gaussian</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>base</code></td>
-            <td class="num">—</td>
-            <td colspan="3"><strong>grid</strong> — "a lattice and a grid are both structured arrangements of lines or points"</td>
-          </tr>
-          <tr>
-            <td><code>0.001</code></td>
-            <td class="num">1.2%</td>
-            <td>grid</td>
-            <td><strong>structure</strong></td>
-            <td>grid</td>
-          </tr>
-          <tr>
-            <td><code>0.002</code></td>
-            <td class="num">2.4%</td>
-            <td><strong>structure</strong></td>
-            <td>grid</td>
-            <td>grid</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.005</code></td>
-            <td class="num">6.0%</td>
-            <td>GRID</td>
-            <td><strong>CRYSTAL</strong></td>
-            <td>GRID</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.010</code></td>
-            <td class="num">11.9%</td>
-            <td><strong>crystal</strong></td>
-            <td><strong>MESH</strong></td>
-            <td>GRID</td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.020</code></td>
-            <td class="num">22.9%</td>
-            <td colspan="2"><em>coherence collapse</em></td>
-            <td><em>coherence collapse</em></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      Gaussian noise never leaves "grid" until coherence collapses entirely. Both lattice
-      methods traverse the semantic neighborhood — but via <em>different routes</em>. Cubic
-      reaches "crystal" first (at 6% displacement) then overshoots to "mesh." Quasi arrives
-      at "crystal" later (11.9%) and settles. They cross each other: at &sigma;=0.005, cubic
-      is on crystal while quasi has reverted to grid; at &sigma;=0.010 they have swapped.
-    </p>
-
-    <div class="insight">
-      <strong>Key observation</strong>
-      The divergence at &sigma;=0.002 is sharp. At 2.4% displacement, quasi has moved to
-      "structure" (an abstraction of grid) while Gaussian stays on "grid." The full output
-      text confirms: quasi's explanation invokes crystallography as a conceptual frame;
-      Gaussian's explanation stays at the visual/structural synonym level. Same displacement
-      magnitude, different semantic depth. The geometry is not just adding noise—it is
-      reranking within an existing neighborhood, promoting higher-abstraction neighbors
-      over surface-level ones.
-    </div>
-
-    <h3>4.2 Replication on a Geometry-Free Word</h3>
-    <p>
-      "Lattice" has direct semantic connections to the perturbation method. To rule out
-      neighborhood-specific confounding, we ran the same protocol on <strong>"dog"</strong>—
-      a high-frequency word with a strong, unambiguous primary association ("bark") and
-      no geometric content.
-    </p>
-
-    <h4>Word: DOG</h4>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Displacement</th>
-            <th>Quasi</th>
-            <th>Cubic</th>
-            <th>Gaussian</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>base</code></td>
-            <td class="num">—</td>
-            <td colspan="3"><strong>bark</strong> — "a dog is known for barking"</td>
-          </tr>
-          <tr>
-            <td><code>0.001</code></td><td class="num">1.2%</td>
-            <td>bark</td><td>bark</td><td>bark</td>
-          </tr>
-          <tr>
-            <td><code>0.002</code></td><td class="num">2.4%</td>
-            <td>bark</td><td>bark</td><td>bark</td>
-          </tr>
-          <tr>
-            <td><code>0.005</code></td><td class="num">6.0%</td>
-            <td>bark</td><td>bark</td><td>bark</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.010</code></td>
-            <td class="num">11.9%</td>
-            <td>bark</td>
-            <td><strong>CAT</strong></td>
-            <td><strong>fur</strong></td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.020</code></td>
-            <td class="num">22.9%</td>
-            <td colspan="3"><em>coherence collapse</em></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      "Bark" is a stronger attractor than "grid" — all three methods hold it through 6%
-      displacement. At 11.9%, the methods diverge into <em>three interpretably distinct
-      types of association</em>:
-    </p>
-
-    <ul style="padding-left: 20px; margin-bottom: 20px;">
-      <li style="margin-bottom: 10px;">
-        <strong>Quasi → bark</strong> (unchanged): the aperiodic projection does not cross
-        the boundary at this scale. The primary behavioral association holds.
-      </li>
-      <li style="margin-bottom: 10px;">
-        <strong>Cubic → CAT</strong>: moves to the canonical <em>categorical neighbor</em>.
-        Dog and cat occupy the same semantic category (pet animals); cubic's orthogonal
-        axes appear to traverse the categorical dimension.
-      </li>
-      <li style="margin-bottom: 10px;">
-        <strong>Gaussian → fur</strong>: moves to a <em>perceptual/physical property</em>.
-        Isotropic noise degrades the relational structure and surfaces a feature of the
-        referent rather than a conceptual neighbor.
-      </li>
-    </ul>
-
-    <div class="insight">
-      <strong>Interpretation</strong>
-      The three perturbation methods are traversing different <em>dimensions</em> of the
-      semantic neighborhood simultaneously. Cubic selects categorical adjacency. Gaussian
-      selects perceptual salience. Quasi maintains the primary association deeper into
-      perturbation space before collapse. This is not consistent with a generic "noise
-      near a decision boundary" explanation—that account predicts the same trajectory
-      regardless of perturbation structure, differing only in rate. Instead, the geometry
-      of the perturbation appears to select which axes of the semantic space get traversed.
-    </div>
-
-    <h3>4.3 Coherence is Matched Across Methods</h3>
-    <p>
-      A critical control: the divergent trajectories are not explained by one method
-      degrading output quality faster than another. Coherence scores (type-token ratio
-      × length factor) are within measurement error across all three methods at every
-      displacement level up to the cliff at &sigma;=0.020. The geometry is changing
-      <em>direction</em>, not <em>energy</em>.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Quasi coherence</th>
-            <th class="num">Cubic coherence</th>
-            <th class="num">Gaussian coherence</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><code>0.001</code></td><td class="num">0.547</td><td class="num">0.544</td><td class="num">0.536</td></tr>
-          <tr><td><code>0.002</code></td><td class="num">0.529</td><td class="num">0.537</td><td class="num">0.570</td></tr>
-          <tr><td><code>0.005</code></td><td class="num">0.540</td><td class="num">0.516</td><td class="num">0.540</td></tr>
-          <tr><td><code>0.010</code></td><td class="num">0.569</td><td class="num">0.552</td><td class="num">0.571</td></tr>
-          <tr class="cliff-row"><td><code>0.020</code></td><td class="num">0.374</td><td class="num">0.544</td><td class="num">0.427</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:13px; color: var(--text-muted);">
-      Note: cubic maintains coherence at &sigma;=0.020 (0.544) while quasi and Gaussian
-      have collapsed (0.374, 0.427), consistent with orthogonal projections preserving
-      more independent weight dimensions deeper into perturbation space.
-    </p>
-
-    <h3>4.4 Full Word Battery</h3>
-    <p>
-      A 40-word battery covering diverse semantic categories (animals, objects, natural
-      phenomena, abstract concepts, social roles) with no geometric content is currently
-      running. Results will replace this placeholder with aggregate trajectory-type
-      statistics and, if the pattern holds, a blind categorization study testing whether
-      shift type (categorical / perceptual / functional / hierarchical) recovers geometry
-      above chance.
-    </p>
-    <div class="note">
-      <strong>In progress:</strong> 40-word association battery across all three
-      perturbation methods. Estimated completion: overnight.
-      <span class="badge badge-running" style="margin-left: 8px;">Running</span>
-    </div>
-
-  </section>
-
   <!-- Discussion -->
   <section id="discussion">
-    <h2>4. Discussion</h2>
+    <h2>5. Discussion</h2>
 
     <h3>What this is</h3>
     <p>
@@ -1047,16 +806,17 @@
 
     <h3>Limitations</h3>
     <ul style="padding-left: 20px; margin-bottom: 14px;">
-      <li style="margin-bottom: 8px;">Primary quantitative results are still dominated by a single model family (Qwen3-4B). Cross-family transfer lanes (Qwen VL, Qwen3.5-27B bf16, Devstral bf16) are only partially complete as of 2026-02-28, with queue/runtime fixes still being applied.</li>
+      <li style="margin-bottom: 8px;">Primary quantitative results are still dominated by a single model family (Qwen3-4B). Cross-family transfer lanes (vision-capable Qwen, Qwen3.5 bf16, non-Qwen bf16 control) remain partial.</li>
       <li style="margin-bottom: 8px;">The from-scratch models are severely undertrained; attractor differences may not generalize to well-trained models.</li>
       <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by word-type Jaccard overlap (set-based, not subword-token-level)—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
       <li style="margin-bottom: 8px;">The non-monotonic scale behavior at &sigma;=0.005 is unexplained.</li>
+      <li style="margin-bottom: 8px;">Operationally, this environment requires explicit model lifecycle management; reproducibility depends on deterministic load/unload control.</li>
     </ul>
   </section>
 
   <!-- Future Work -->
   <section id="future">
-    <h2>5. Future Work</h2>
+    <h2>6. Future Work</h2>
 
     <div class="table-wrap">
       <table>
@@ -1066,13 +826,13 @@
         <tbody>
           <tr>
             <td>GSM8K + MMLU (4B post-hoc)</td>
-            <td><span class="badge badge-running">Running</span></td>
+            <td><span class="badge badge-running">Partially complete</span></td>
             <td>Crystallized models will score within 2% of base on math/knowledge benchmarks</td>
           </tr>
           <tr>
             <td>1B quasicrystalline from-scratch</td>
-            <td><span class="badge badge-running">Training</span></td>
-            <td>Larger model will show more distinct, coherent attractor character</td>
+            <td><span class="badge badge-planned">Paused</span></td>
+            <td>Resume only after controlled post-hoc knob mapping establishes clear, testable targets</td>
           </tr>
           <tr>
             <td>Personality consistency study</td>
@@ -1088,6 +848,11 @@
             <td>Multi-family validation (Qwen VL + Qwen3.5 + non-Qwen bf16)</td>
             <td><span class="badge badge-running">In progress (partial)</span></td>
             <td>Post-hoc geometric rearrangement preserves capability and qualitative behavior across model families, sizes, and vision-capable variants</td>
+          </tr>
+          <tr>
+            <td>Knob map (geometry × layer target × scale)</td>
+            <td><span class="badge badge-running">In progress</span></td>
+            <td>Identify controllable regions where semantic behavior remains stable while style/format trajectories shift predictably</td>
           </tr>
           <tr>
             <td>Directed geometry design</td>
