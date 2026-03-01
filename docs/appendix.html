@@ -67,6 +67,17 @@
   </section>
 
   <section>
+    <h2>Pre-Registered Decision Rubric (v1)</h2>
+    <ul class="flat-list">
+      <li><strong>Primary control metric:</strong> direction and magnitude of strict separation between calibrated geometric variant and displacement-matched Gaussian/orth controls.</li>
+      <li><strong>Replication rule:</strong> each lane requires 3 seeds x 500 tasks before entering decision accounting.</li>
+      <li><strong>Family generalization gate:</strong> continue-scale only if the primary direction replicates in at least 3 of 5 total family lanes under matched controls.</li>
+      <li><strong>Category robustness gate:</strong> at least one non-<code>one_word</code> category must show replicated separation in at least 2 families.</li>
+      <li><strong>Pause condition:</strong> if signals remain confined to one category with inconsistent family direction after 5-family coverage, treat post-hoc steering as narrow and avoid large scratch scaling on that basis.</li>
+    </ul>
+  </section>
+
+  <section>
     <h2>Interpretation Discipline</h2>
     <ul class="flat-list">
       <li>Family-direction disagreements (for example Devstral vs Qwen strict behavior) are treated as unresolved, not averaged away.</li>
