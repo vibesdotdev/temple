@@ -1,0 +1,7 @@
+# Local workspace noise
+.DS_Store
+__pycache__/
+.vibes/
+
+# Experimental source staging area (kept local until redaction/publish pass)
+src/
