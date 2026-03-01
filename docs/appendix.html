@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEMPLE - Appendix</title>
+  <meta name="description" content="TEMPLE appendix: reproducibility conventions, scoring definitions, and statistical notes.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <nav>
+    <a href="index.html" class="logo">TEMPLE</a>
+    <a href="index.html">Overview</a>
+    <a href="results.html">Results</a>
+    <a href="method.html">Method</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="appendix.html" class="active">Appendix</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Scope</h2>
+    <p>
+      This appendix documents public reproducibility rules for interpreting TEMPLE results. It is designed to support independent audit without publishing implementation internals that materially increase steering precision.
+    </p>
+  </section>
+
+  <section>
+    <h2>Evaluation Battery Conventions</h2>
+    <ul class="flat-list">
+      <li>Primary 4-way control lanes use 500 prompts per run, fixed by seed.</li>
+      <li>Current category split is 5x100 prompts: <code>one_word</code>, <code>command_only</code>, <code>exact_letter</code>, <code>exact_number</code>, <code>python_function</code>.</li>
+      <li>Replications are reported over seeds <code>42</code>, <code>1337</code>, <code>2027</code> unless otherwise noted.</li>
+      <li>One model is loaded at a time during scoring to reduce lifecycle cross-talk.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Metric Definitions</h2>
+    <ul class="flat-list">
+      <li><strong>Strict:</strong> exact output-contract compliance on the prompt's declared format target.</li>
+      <li><strong>Semantic:</strong> meaning-level correctness under relaxed formatting constraints.</li>
+      <li><strong>Category strict/semantic:</strong> same metrics computed within each task category.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Aggregation And Significance</h2>
+    <ul class="flat-list">
+      <li>Replicated summary rows are reported as mean +/- population standard deviation across seeds.</li>
+      <li>Within-run pairwise significance uses exact paired tests on shared prompts (discordant-pair framing).</li>
+      <li>Claims are raised from provisional to replicated only when direction and significance patterns repeat across runs.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Versioning Boundaries</h2>
+    <div class="note">
+      <strong>Scoring change:</strong> on March 1, 2026, one-word semantic scoring was tightened with a short-answer token cap.
+    </div>
+    <ul class="flat-list">
+      <li>Strict scores remain comparable across current 4-way replicated lanes.</li>
+      <li>Semantic scores from runs before this change are reported but not pooled with strict-mode semantic runs.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Interpretation Discipline</h2>
+    <ul class="flat-list">
+      <li>Family-direction disagreements (for example Devstral vs Qwen strict behavior) are treated as unresolved, not averaged away.</li>
+      <li>Current evidence is strongest for format-robustness behavior; deeper reasoning claims remain open.</li>
+      <li>Negative or mixed outcomes are retained in the public ledger.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where To Verify</h2>
+    <ul class="flat-list">
+      <li>Primary aggregated outcomes: <a href="results.html">Results</a></li>
+      <li>Protocol summary and disclosure boundary: <a href="method.html">Method</a></li>
+      <li>Current decision gates and queued tests: <a href="roadmap.html">Roadmap</a></li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  TEMPLE - 2026 - <a href="index.html">Back to Overview</a>
+</footer>
+</body>
+</html>
