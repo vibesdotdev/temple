@@ -547,14 +547,44 @@
           <tr><td>Base</td><td class="num">&mdash;</td><td class="num">6/8 (75.0%)</td></tr>
           <tr><td>Crystal, uncalibrated scale</td><td class="num">~54%</td><td class="num">0/8 (0.0%)</td></tr>
           <tr class="highlight-row"><td>Crystal, displacement-calibrated</td><td class="num">~9%</td><td class="num">7/8 (87.5%)</td></tr>
+          <tr><td>Gaussian, displacement-matched control</td><td class="num">~9%</td><td class="num">7/8 (87.5%)</td></tr>
         </tbody>
       </table>
     </div>
     <p style="font-size: 13px; color: var(--text-muted);">
       This pilot is small (n=8 prompts) and not a definitive capability claim. It does, however,
       support displacement-normalized transfer as a key requirement for cross-family robustness.
+      In this quick lane, calibrated crystal and displacement-matched Gaussian tie; this means
+      geometry-specific advantage is not yet established in this family on this metric.
       We report displacement regimes and outcomes here; detailed calibration recipes are deferred
       pending broader robustness and misuse-risk characterization.
+    </p>
+
+    <h4>Follow-up Lifecycle Check (same family, 100 tasks)</h4>
+    <p>
+      A larger strict+semantic lifecycle check on the same three conditions shows the quick-lane tie
+      was not fully stable. The calibrated crystal remains close to base under strict scoring, while
+      displacement-matched Gaussian drops more on strict format compliance.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">Strict (100)</th>
+            <th class="num">Semantic (100)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Base</td><td class="num">71/100 (71.0%)</td><td class="num">80/100 (80.0%)</td></tr>
+          <tr class="highlight-row"><td>Crystal, displacement-calibrated</td><td class="num">70/100 (70.0%)</td><td class="num">75/100 (75.0%)</td></tr>
+          <tr><td>Gaussian, displacement-matched</td><td class="num">63/100 (63.0%)</td><td class="num">76/100 (76.0%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: var(--text-muted);">
+      Interpretation: in this family, displacement calibration is necessary for viability; geometry-specific
+      effects remain plausible but are not yet cleanly isolated across metrics and sample sizes.
     </p>
   </section>
 
@@ -848,6 +878,8 @@
     <h3>Limitations</h3>
     <ul style="padding-left: 20px; margin-bottom: 14px;">
       <li style="margin-bottom: 8px;">Primary quantitative results are still dominated by a single model family (Qwen3-4B). Cross-family transfer has an encouraging non-Qwen pilot, but broader validation (vision-capable Qwen, Qwen3.5 bf16, multiple non-Qwen controls) remains partial.</li>
+      <li style="margin-bottom: 8px;">In the non-Qwen quick lane, calibrated crystal and displacement-matched Gaussian currently tie; additional controls are required before attributing cross-family gains to geometry itself.</li>
+      <li style="margin-bottom: 8px;">Cross-family conclusions are metric-sensitive: quick probes and larger strict+semantic lanes can disagree, so claims must be qualified by evaluation regime.</li>
       <li style="margin-bottom: 8px;">The from-scratch models are severely undertrained; attractor differences may not generalize to well-trained models.</li>
       <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by word-type Jaccard overlap (set-based, not subword-token-level)—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
       <li style="margin-bottom: 8px;">The non-monotonic scale behavior at &sigma;=0.005 is unexplained.</li>
