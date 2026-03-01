@@ -463,7 +463,7 @@
       prompt sets, inter-prompt consistency measurement) is planned as next-step validation.
     </p>
 
-    <h3>3.5 Additional Benchmarks (2026-02-28 Update)</h3>
+    <h3>3.5 Additional Benchmarks (2026-03-01 Update)</h3>
     <p>
       We added two additional benchmark blocks to test whether post-hoc geometry effects are
       concentrated in specific layer families and whether strict-format sensitivity differs from
@@ -525,6 +525,36 @@
       format-compliance degrades as perturbation scope widens (especially <code>both</code>/<code>all</code>).
       This supports a "surface-control with constraint tradeoff" framing rather than a pure
       capability-preservation claim.
+    </p>
+
+    <h4>Cross-Family Calibration Pilot (non-Qwen bf16, exploratory)</h4>
+    <p>
+      A cross-family pilot on a non-Qwen bf16 model showed that a fixed absolute perturbation scale
+      does not transfer reliably across families. With uncalibrated perturbation magnitude, the
+      crystallized model collapsed on a quick 8-task check. After displacement calibration into the
+      same operating envelope used in successful Qwen runs, performance recovered.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition (same base family)</th>
+            <th class="num">Mean displacement</th>
+            <th class="num">Quick score (8 tasks)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Base</td><td class="num">&mdash;</td><td class="num">6/8 (75.0%)</td></tr>
+          <tr><td>Crystal, uncalibrated scale</td><td class="num">~54%</td><td class="num">0/8 (0.0%)</td></tr>
+          <tr class="highlight-row"><td>Crystal, displacement-calibrated</td><td class="num">~9%</td><td class="num">7/8 (87.5%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: var(--text-muted);">
+      This pilot is small (n=8 prompts) and not a definitive capability claim. It does, however,
+      support displacement-normalized transfer as a key requirement for cross-family robustness.
+      We report displacement regimes and outcomes here; detailed calibration recipes are deferred
+      pending broader robustness and misuse-risk characterization.
     </p>
   </section>
 
@@ -804,9 +834,20 @@
       framing the operation as behavioral parameterization rather than compression.
     </p>
 
+    <h3>Disclosure stance</h3>
+    <p>
+      We follow staged disclosure: publish aggregate evidence, controls, and reproducible evaluation
+      criteria early; delay release of optimization details that materially increase steering power
+      until robustness and misuse-risk characterization are stronger.
+    </p>
+    <p>
+      The goal is scientific transparency about effects and limits while reducing premature release
+      of techniques that are not yet well-calibrated across model families and use cases.
+    </p>
+
     <h3>Limitations</h3>
     <ul style="padding-left: 20px; margin-bottom: 14px;">
-      <li style="margin-bottom: 8px;">Primary quantitative results are still dominated by a single model family (Qwen3-4B). Cross-family transfer lanes (vision-capable Qwen, Qwen3.5 bf16, non-Qwen bf16 control) remain partial.</li>
+      <li style="margin-bottom: 8px;">Primary quantitative results are still dominated by a single model family (Qwen3-4B). Cross-family transfer has an encouraging non-Qwen pilot, but broader validation (vision-capable Qwen, Qwen3.5 bf16, multiple non-Qwen controls) remains partial.</li>
       <li style="margin-bottom: 8px;">The from-scratch models are severely undertrained; attractor differences may not generalize to well-trained models.</li>
       <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by word-type Jaccard overlap (set-based, not subword-token-level)—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
       <li style="margin-bottom: 8px;">The non-monotonic scale behavior at &sigma;=0.005 is unexplained.</li>
@@ -846,8 +887,8 @@
           </tr>
           <tr>
             <td>Multi-family validation (Qwen VL + Qwen3.5 + non-Qwen bf16)</td>
-            <td><span class="badge badge-running">In progress (partial)</span></td>
-            <td>Post-hoc geometric rearrangement preserves capability and qualitative behavior across model families, sizes, and vision-capable variants</td>
+            <td><span class="badge badge-running">In progress (early positive pilot)</span></td>
+            <td>Displacement-normalized post-hoc rearrangement can preserve behavior across families; fixed absolute perturbation scales do not reliably transfer</td>
           </tr>
           <tr>
             <td>Knob map (geometry × layer target × scale)</td>
