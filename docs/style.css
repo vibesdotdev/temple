@@ -60,6 +60,7 @@ body {
 }
 
 .site-header nav a:hover { color: var(--accent); }
+.site-header nav a.active { color: var(--accent); font-weight: 600; }
 
 main {
   max-width: var(--max-width);
@@ -165,6 +166,15 @@ section h4 {
 p {
   margin-bottom: 14px;
   color: var(--text);
+}
+
+.flat-list {
+  padding-left: 20px;
+  margin-bottom: 14px;
+}
+
+.flat-list li {
+  margin-bottom: 8px;
 }
 
 /* ── Abstract box ── */

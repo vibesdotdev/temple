@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEMPLE - Roadmap</title>
+  <meta name="description" content="TEMPLE roadmap: immediate experiments, decision gates, and stop/continue criteria.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <nav>
+    <a href="index.html" class="logo">TEMPLE</a>
+    <a href="index.html">Overview</a>
+    <a href="results.html">Results</a>
+    <a href="method.html">Method</a>
+    <a href="roadmap.html" class="active">Roadmap</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Research Questions</h2>
+    <ul class="flat-list">
+      <li>Is geometric rearrangement giving a reproducible control signal beyond matched-noise baselines?</li>
+      <li>Which capability axes are controllable (style/format vs reasoning depth vs factual recall)?</li>
+      <li>How well does the signal transfer across model families and sizes?</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Execution Queue (Next 48 Hours)</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Success Criterion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Replicate orth_match on 2 additional 500-task seeds</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td>Completed: direction held across both seeds; orth stayed below base/calib.</td>
+          </tr>
+          <tr>
+            <td>Run one additional non-Qwen matched-control lane</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td>Completed on Devstral-Small-2505 with 3 replicated seeds.</td>
+          </tr>
+          <tr>
+            <td>Add a truly distinct family (non-Mistral) with matched controls</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td>Completed on Qwen3-4B with 3 replicated seeds; strict direction inverted vs Devstral.</td>
+          </tr>
+          <tr>
+            <td>Category-focused diagnostics (one_word and command_only)</td>
+            <td><span class="badge badge-planned">Next</span></td>
+            <td>Expand from mean snapshots to pairwise per-category significance by family.</td>
+          </tr>
+          <tr>
+            <td>Vision-capable lane (Qwen3.5-27B) matched-control pilot</td>
+            <td><span class="badge badge-planned">Next</span></td>
+            <td>Establish whether directional effects persist under multimodal weights.</td>
+          </tr>
+          <tr>
+            <td>Non-Qwen bf16 family lane (matched controls + 3 seeds)</td>
+            <td><span class="badge badge-planned">Next</span></td>
+            <td>Resolve whether the current split is family-specific or architecture-general.</td>
+          </tr>
+          <tr>
+            <td>Pre-register decisive stop/continue thresholds for post-hoc vs scratch</td>
+            <td><span class="badge badge-planned">Next</span></td>
+            <td>Freeze pass/fail criteria before new large runs to prevent moving-goal interpretation.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Continue vs Stop Gates</h2>
+    <h3>Continue / invest</h3>
+    <ul class="flat-list">
+      <li>Effect survives matched controls across at least two families.</li>
+      <li>Effect replicates across at least three seeds per lane.</li>
+      <li>Primary deltas persist when moving from quick probes to larger batteries.</li>
+    </ul>
+
+    <h3>Stop / park</h3>
+    <ul class="flat-list">
+      <li>Effect collapses under matched controls and replications.</li>
+      <li>Observed gains can be explained by scoring artifacts.</li>
+      <li>No reliable improvement target can be isolated on pre-registered metrics.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Scratch Training Position</h2>
+    <p>
+      Scratch scaling is intentionally paused while post-hoc control mapping remains unresolved. The current view is that controlled transfer evidence should lead architecture-scale decisions, not the reverse.
+    </p>
+  </section>
+</main>
+
+<footer>
+  TEMPLE - 2026 - <a href="index.html">Back to Overview</a>
+</footer>
+</body>
+</html>

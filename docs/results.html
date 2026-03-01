@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEMPLE - Results</title>
+  <meta name="description" content="Validated TEMPLE result ledger with controls, caveats, and significance notes.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <nav>
+    <a href="index.html" class="logo">TEMPLE</a>
+    <a href="index.html">Overview</a>
+    <a href="results.html" class="active">Results</a>
+    <a href="method.html">Method</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Result Ledger (Validated)</h2>
+    <p>
+      This page reports values verified from experiment artifacts. Scores are shown exactly as measured in each lane.
+    </p>
+  </section>
+
+  <section>
+    <h2>Qwen3-4B Post-hoc Baseline Block</h2>
+    <p>Model family: Qwen3-4B-Instruct. Post-hoc perturbation at sigma 0.005.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">ARC-Challenge</th>
+            <th class="num">Delta vs base</th>
+            <th class="num">MMLU 8-task avg</th>
+            <th class="num">Delta vs base</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row">
+            <td>Base</td>
+            <td class="num">89.51%</td>
+            <td class="num"> - </td>
+            <td class="num">73.00%</td>
+            <td class="num"> - </td>
+          </tr>
+          <tr>
+            <td>Cubic</td>
+            <td class="num">89.25%</td>
+            <td class="num delta-neg">-0.26pp</td>
+            <td class="num">70.25%</td>
+            <td class="num delta-neg">-2.75pp</td>
+          </tr>
+          <tr>
+            <td>Hexagonal</td>
+            <td class="num">89.25%</td>
+            <td class="num delta-neg">-0.26pp</td>
+            <td class="num">72.25%</td>
+            <td class="num delta-neg">-0.75pp</td>
+          </tr>
+          <tr>
+            <td>Quasicrystalline</td>
+            <td class="num">88.65%</td>
+            <td class="num delta-neg">-0.86pp</td>
+            <td class="num">71.00%</td>
+            <td class="num delta-neg">-2.00pp</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Strict vs Semantic (5-model, 500 tasks)</h2>
+    <p>Single family module-target sweep on base/attn/mlp/both/all variants.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">Strict</th>
+            <th class="num">Semantic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row"><td>base</td><td class="num">68.2%</td><td class="num">94.2%</td></tr>
+          <tr><td>attn</td><td class="num">68.0%</td><td class="num">94.0%</td></tr>
+          <tr><td>mlp</td><td class="num">63.8%</td><td class="num">92.8%</td></tr>
+          <tr><td>both</td><td class="num">60.2%</td><td class="num">93.4%</td></tr>
+          <tr><td>all</td><td class="num">60.2%</td><td class="num">93.4%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Main signal: widening perturbation scope reduces strict format compliance faster than semantic pass rate.
+    </p>
+  </section>
+
+  <section>
+    <h2>Devstral Controls (4-way, 500 tasks)</h2>
+    <p>
+      Initial run ID: <code>devstral-4way-orthctrl-500-20260301-032230</code>. Conditions: base, calibrated crystal, displacement-matched Gaussian, displacement-matched structured orthogonal control.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">Strict</th>
+            <th class="num">Semantic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row"><td>base</td><td class="num">69.8%</td><td class="num">78.6%</td></tr>
+          <tr><td>calib</td><td class="num">70.4%</td><td class="num">74.8%</td></tr>
+          <tr><td>gauss_match</td><td class="num">63.4%</td><td class="num">72.2%</td></tr>
+          <tr><td>orth_match</td><td class="num">62.6%</td><td class="num">66.8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Paired Significance Notes (within this run)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Comparison</th>
+            <th class="num">Metric</th>
+            <th class="num">Discordant pairs</th>
+            <th class="num">Exact p-value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>base vs orth_match</td><td class="num">strict</td><td class="num">90</td><td class="num">0.00019</td></tr>
+          <tr><td>base vs orth_match</td><td class="num">semantic</td><td class="num">75</td><td class="num">1.0e-12</td></tr>
+          <tr><td>gauss_match vs orth_match</td><td class="num">strict</td><td class="num">56</td><td class="num">0.689</td></tr>
+          <tr><td>gauss_match vs orth_match</td><td class="num">semantic</td><td class="num">39</td><td class="num">1.4e-05</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      This seed-level signal replicated directionally in two follow-up runs (seeds 1337 and 2027): base/calib remained above orth on strict and semantic.
+    </p>
+  </section>
+
+  <section>
+    <h2>Replication Status</h2>
+    <p>
+      Three 4-way seeds are complete (seed42, seed1337, seed2027). These rows use the stricter one-word semantic mode (`one_word_semantic_max_tokens=3`).
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">Strict mean +/- sd (3 runs)</th>
+            <th class="num">Semantic mean +/- sd (3 runs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>base</td><td class="num">70.47 +/- 0.68</td><td class="num">79.27 +/- 0.47</td></tr>
+          <tr><td>calib</td><td class="num">71.40 +/- 1.14</td><td class="num">75.73 +/- 1.05</td></tr>
+          <tr><td>gauss_match</td><td class="num">63.80 +/- 1.18</td><td class="num">72.47 +/- 0.84</td></tr>
+          <tr><td>orth_match</td><td class="num">63.13 +/- 1.05</td><td class="num">67.33 +/- 0.90</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Significance pattern over seeds: base vs orth is significant on strict and semantic in each run; gauss vs orth is not separated on strict but is separated on semantic.
+    </p>
+  </section>
+
+  <section>
+    <h2>Second-Model Check (Devstral-Small-2505, 3 seeds x 500 tasks)</h2>
+    <p>
+      Runs: <code>seed42</code>, <code>seed1337</code>, <code>seed2027</code>. Crystal and controls were displacement-matched near 0.083.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">Strict mean +/- sd</th>
+            <th class="num">Semantic mean +/- sd</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row"><td>base</td><td class="num">75.33 +/- 0.82</td><td class="num">79.93 +/- 0.50</td></tr>
+          <tr><td>calib</td><td class="num">70.53 +/- 1.09</td><td class="num">80.13 +/- 0.66</td></tr>
+          <tr><td>gauss_match</td><td class="num">62.53 +/- 0.74</td><td class="num">75.80 +/- 0.43</td></tr>
+          <tr><td>orth_match</td><td class="num">62.13 +/- 0.82</td><td class="num">68.27 +/- 0.66</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Replicated pattern: strict ranking is base > calib >> gauss ~= orth. Semantic keeps calib near base, with orth consistently lowest. Base vs orth is significant on strict and semantic in all three runs; gauss vs orth is not separated on strict but is separated on semantic in all three runs.
+    </p>
+  </section>
+
+  <section>
+    <h2>Caveats</h2>
+    <ul class="flat-list">
+      <li>The one-word semantic scorer was tightened on March 1, 2026. Semantic values from older runs are not directly comparable to newer strict-mode semantic runs.</li>
+      <li>Cross-family behavior is no longer single-family, but it is still sparse (currently two Devstral variants and one Qwen variant).</li>
+      <li>Current quantitative evidence is strongest for format robustness patterns; reasoning-depth claims remain open.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Distinct-Family Probe (Qwen3-4B, 3 seeds x 500 tasks)</h2>
+    <p>
+      Runs: <code>seed42</code>, <code>seed1337</code>, <code>seed2027</code>. Controls were displacement-matched near 0.060.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th class="num">Strict mean +/- sd</th>
+            <th class="num">Semantic mean +/- sd</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>base</td><td class="num">64.13 +/- 0.09</td><td class="num">90.27 +/- 0.25</td></tr>
+          <tr><td>calib</td><td class="num">67.80 +/- 0.00</td><td class="num">89.47 +/- 0.25</td></tr>
+          <tr class="highlight-row"><td>gauss_match</td><td class="num">68.60 +/- 0.28</td><td class="num">89.00 +/- 0.43</td></tr>
+          <tr><td>orth_match</td><td class="num">68.07 +/- 0.09</td><td class="num">90.27 +/- 0.62</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Replicated result: strict ranking in Qwen is controls above base in all three seeds (all base-vs-control strict comparisons significant per run). Semantic differences are small and mixed. Category split shows a stable one-word strict lift for all controls (80%) vs base (60%), which explains much of the strict inversion.
+    </p>
+  </section>
+
+  <section>
+    <h2>Cross-family Category Readout (3-seed means)</h2>
+    <p>
+      Category means below are derived from the same 3-seed 4-way runs. They are included to make directional differences auditable.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Lane</th>
+            <th>Condition</th>
+            <th class="num">one_word strict</th>
+            <th class="num">command_only strict</th>
+            <th class="num">exact_number strict</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Devstral-2507</td><td>base</td><td class="num">100.00</td><td class="num">40.00</td><td class="num">12.33</td></tr>
+          <tr><td>Devstral-2507</td><td>calib</td><td class="num">99.00</td><td class="num">40.00</td><td class="num">18.00</td></tr>
+          <tr><td>Devstral-2507</td><td>gauss_match</td><td class="num">60.00</td><td class="num">40.00</td><td class="num">19.00</td></tr>
+          <tr><td>Devstral-2507</td><td>orth_match</td><td class="num">60.00</td><td class="num">40.00</td><td class="num">15.67</td></tr>
+          <tr><td>Devstral-2505</td><td>base</td><td class="num">100.00</td><td class="num">60.00</td><td class="num">16.67</td></tr>
+          <tr><td>Devstral-2505</td><td>calib</td><td class="num">100.00</td><td class="num">40.00</td><td class="num">12.67</td></tr>
+          <tr><td>Devstral-2505</td><td>gauss_match</td><td class="num">79.00</td><td class="num">20.00</td><td class="num">13.67</td></tr>
+          <tr><td>Devstral-2505</td><td>orth_match</td><td class="num">60.00</td><td class="num">40.00</td><td class="num">10.67</td></tr>
+          <tr><td>Qwen3-4B</td><td>base</td><td class="num">60.00</td><td class="num">60.00</td><td class="num">0.67</td></tr>
+          <tr><td>Qwen3-4B</td><td>calib</td><td class="num">80.00</td><td class="num">59.00</td><td class="num">0.00</td></tr>
+          <tr><td>Qwen3-4B</td><td>gauss_match</td><td class="num">80.00</td><td class="num">61.00</td><td class="num">2.00</td></tr>
+          <tr><td>Qwen3-4B</td><td>orth_match</td><td class="num">80.00</td><td class="num">60.00</td><td class="num">0.33</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Run Registry (Replicated 4-way lanes)</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Lane</th>
+            <th>Run IDs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Devstral-2507</td>
+            <td>
+              <code>devstral-4way-orthctrl-500-20260301-032230</code>,
+              <code>devstral-4way-orthctrl-500-seed1337-20260301-044732</code>,
+              <code>devstral-4way-orthctrl-500-seed2027-20260301-054025</code>
+            </td>
+          </tr>
+          <tr>
+            <td>Devstral-2505</td>
+            <td>
+              <code>devstral2505-4way-500-seed42-20260301-065122</code>,
+              <code>devstral2505-4way-500-seed1337-20260301-072612</code>,
+              <code>devstral2505-4way-500-seed2027-20260301-080010</code>
+            </td>
+          </tr>
+          <tr>
+            <td>Qwen3-4B</td>
+            <td>
+              <code>qwen4b-4way-500-seed42-20260301-083817</code>,
+              <code>qwen4b-4way-500-seed1337-20260301-085907</code>,
+              <code>qwen4b-4way-500-seed2027-20260301-092017</code>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  TEMPLE - 2026 - <a href="index.html">Back to Overview</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEMPLE - Method</title>
+  <meta name="description" content="TEMPLE method summary: controls, evaluation protocol, and disclosure policy.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <nav>
+    <a href="index.html" class="logo">TEMPLE</a>
+    <a href="index.html">Overview</a>
+    <a href="results.html">Results</a>
+    <a href="method.html" class="active">Method</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Method Summary</h2>
+    <p>
+      TEMPLE studies deterministic post-hoc rearrangement of model weights using geometric transforms, with matched-control baselines and strict lifecycle execution.
+    </p>
+  </section>
+
+  <section>
+    <h2>Protocol</h2>
+    <h3>1. Build candidate variants</h3>
+    <ul class="flat-list">
+      <li>Geometric variant (for example, quasicrystalline/cubic/hexagonal family operations).</li>
+      <li>Displacement-matched Gaussian control.</li>
+      <li>Displacement-matched structured orthogonal control (new control lane).</li>
+    </ul>
+
+    <h3>2. Match perturbation regime</h3>
+    <ul class="flat-list">
+      <li>Target average displacement is matched across controls before scoring.</li>
+      <li>Uncalibrated perturbations are treated as invalid for cross-family conclusions.</li>
+    </ul>
+
+    <h3>3. Evaluate with strict lifecycle runner</h3>
+    <ul class="flat-list">
+      <li>One model active at a time with deterministic load/unload sequencing.</li>
+      <li>Fixed seed task batteries, fixed decoding settings.</li>
+      <li>Two score channels: strict-format pass and semantic pass.</li>
+    </ul>
+
+    <h3>4. Analyze per-category and paired deltas</h3>
+    <ul class="flat-list">
+      <li>Category splits expose where effects concentrate (for example, one-word formatting).</li>
+      <li>Paired tests on shared prompts quantify within-run significance.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Scoring Notes</h2>
+    <p>
+      Strict score measures exact output contract compliance. Semantic score measures meaning-level correctness with looser formatting requirements.
+    </p>
+    <div class="note">
+      <strong>Update:</strong> one-word semantic scoring now enforces a short-answer limit to prevent verbose overlap from being counted as semantic success.
+    </div>
+  </section>
+
+  <section>
+    <h2>Versioning And Comparability</h2>
+    <ul class="flat-list">
+      <li>Strict scores are directly comparable across all current 4-way replicated lanes.</li>
+      <li>Semantic scores from runs before the one-word semantic tightening (March 1, 2026) are tracked but not pooled with strict-mode semantic runs.</li>
+      <li>When family direction differs (for example Devstral vs Qwen strict ranking), interpretation remains family-stratified until additional families replicate one side.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What Is Public vs Private</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Public</th>
+            <th>Private</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Outcome metrics, controls used, caveats, and decision gates.</td>
+            <td>Precision calibration recipes, queue internals, and implementation details that materially increase steering precision.</td>
+          </tr>
+          <tr>
+            <td>Run IDs and high-level methodology.</td>
+            <td>Operational infrastructure details and private source tooling internals.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decision Rule</h2>
+    <p>
+      We only escalate claims when effects replicate across seeds and controls with matched displacement. Single-run findings are reported as provisional.
+    </p>
+  </section>
+</main>
+
+<footer>
+  TEMPLE - 2026 - <a href="index.html">Back to Overview</a>
+</footer>
+</body>
+</html>

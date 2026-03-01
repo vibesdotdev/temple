@@ -3,959 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TEMPLE — Crystallographic Projections in Neural Network Weight Space</title>
-  <meta name="description" content="TEMPLE explores geometric lattice constraints on LLM weights, producing measurable output diversity with less than 1% benchmark degradation.">
+  <title>TEMPLE - Research Overview</title>
+  <meta name="description" content="TEMPLE research overview: validated results, current hypothesis status, and next steps.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <header class="site-header">
   <nav>
-    <a href="#" class="logo">TEMPLE</a>
-    <a href="#abstract">Abstract</a>
-    <a href="#method">Method</a>
-    <a href="#experiments">Experiments</a>
-    <a href="#geometry-trajectories">Trajectories</a>
-    <a href="#discussion">Discussion</a>
-    <a href="#bibtex">Cite</a>
+    <a href="index.html" class="logo">TEMPLE</a>
+    <a href="index.html" class="active">Overview</a>
+    <a href="results.html">Results</a>
+    <a href="method.html">Method</a>
+    <a href="roadmap.html">Roadmap</a>
   </nav>
 </header>
 
 <main>
-
-  <!-- Hero -->
   <div class="hero">
-    <div class="project-name">TEMPLE &mdash; Research Report &mdash; 2026</div>
-    <h1>Crystallographic Projections in Neural Network Weight Space</h1>
-    <p class="authors">
-      Andrew Ewing &middot; Independent Research &middot; 2026
-    </p>
+    <div class="project-name">TEMPLE - Research Report - March 1, 2026</div>
+    <h1>Geometric Rearrangement In Weight Space</h1>
+    <p class="authors">Andrew Ewing - Independent Research</p>
     <div class="links">
-      <a href="https://github.com/vibesdotdev/temple" class="btn btn-primary">Code</a>
-      <a href="#abstract" class="btn">Abstract</a>
-      <a href="#experiments" class="btn">Results</a>
+      <a href="results.html" class="btn btn-primary">Read Latest Results</a>
+      <a href="method.html" class="btn">Read Method</a>
+      <a href="roadmap.html" class="btn">Read Next Steps</a>
     </div>
   </div>
 
-  <!-- Abstract -->
-  <section id="abstract">
-    <h2>Abstract</h2>
-    <div class="abstract-box">
-      <p>
-        We introduce <strong>TEMPLE</strong> (Training with Enforced Manifold Projections on Lattice Embeddings),
-        a method that imposes crystallographic lattice geometry on neural network weight matrices, either
-        post-hoc or as a constraint during gradient descent. Three crystal symmetries are explored: cubic
-        (regular Cartesian grid), hexagonal (pairwise A2 nearest-lattice projection), and quasicrystalline (cut-and-project along an
-        irrational slope). Applied post-hoc to Qwen3-4B-Instruct at displacement scale &sigma;&nbsp;=&nbsp;0.005,
-        crystallized models score within <strong>0.86% of baseline</strong> on ARC-Challenge (89.51% base vs.
-        88.65% quasi) and within <strong>2.7pp on MMLU</strong> (8-task average: 73.0% base vs. 70.2–72.2%
-        crystallized) while producing outputs with roughly <strong>75% word-level divergence</strong>
-        (word-type Jaccard&nbsp;&asymp;&nbsp;0.25) from the base model. From-scratch training with lattice-constrained
-        gradient descent converges to geometry-specific behavioral attractor basins, suggesting that
-        weight-space geometry constitutes a meaningful, parameterizable dimension of model behavior.
-        In current results, semantic correctness is largely preserved at practical scales, while
-        strict format compliance can degrade depending on which layer families are edited.
-      </p>
-    </div>
-  </section>
-
-  <!-- Introduction -->
-  <section id="introduction">
-    <h2>1. Introduction</h2>
-    <p>
-      The dominant approaches to steering language model behavior—RLHF, DPO, instruction tuning—require
-      expensive supervised data and full training runs. Activation steering and representation engineering
-      are cheaper but introduce per-token runtime overhead. Prompting is trivially cheap but coarse.
-    </p>
-    <p>
-      We ask a different question: <em>can the geometry of weight space itself encode behavioral
-      diversity?</em> Crystallographic lattices are among the most well-studied geometric structures
-      in mathematics and physics. They offer a principled, continuously parameterized family of
-      discrete constraints, each with distinct symmetry properties.
-    </p>
-    <p>
-      TEMPLE applies these constraints to neural weights via a nearest-neighbor projection: each weight
-      value is snapped to the closest point on a scaled lattice. The key properties of this operation
-      are (1) it is <strong>deterministic and reproducible</strong>, (2) it is <strong>parameter-free
-      at inference time</strong> (weights are modified once, at save time), and (3) different crystal
-      symmetries produce outputs that are <strong>measurably distinct</strong> from one another and
-      from the base model, while preserving task performance at moderate displacement scales.
-    </p>
-    <p>
-      This work reports experimental results across two settings: post-hoc crystallization of a
-      pretrained 4B parameter instruct model, and exploratory from-scratch training of 123M parameter
-      models under lattice gradient constraints. Larger from-scratch scaling is currently paused while
-      controlled post-hoc transfer and knob-mapping experiments are prioritized.
-    </p>
-  </section>
-
-  <!-- Method -->
-  <section id="method">
-    <h2>2. Method</h2>
-
-    <h3>2.1 Lattice Projection</h3>
-    <p>
-      Given a weight tensor <strong>W</strong> and scale parameter &sigma;, the lattice projection
-      <strong>&Pi;<sub>L</sub></strong> maps each scalar weight to the nearest point on lattice
-      <em>L</em> scaled by &sigma;:
-    </p>
-    <pre><code>&#x3A0;_L(w; &#x3C3;) = &#x3C3; &middot; nearest_L(w / &#x3C3;)</code></pre>
-    <p>
-      This is applied independently to each weight value. The scale &sigma; controls the granularity
-      of quantization—larger &sigma; means coarser snapping and larger weight displacement.
-    </p>
-
-    <h3>2.2 Crystal Geometries</h3>
-
-    <h4>Cubic</h4>
-    <p>
-      The simplest lattice: a regular Cartesian grid. Projection is equivalent to rounding to the
-      nearest multiple of &sigma;.
-    </p>
-    <pre><code>w &rarr; round(w / &#x3C3;) &times; &#x3C3;</code></pre>
-
-    <h4>Hexagonal</h4>
-    <p>
-      A true hexagonal (<code>A2</code>) nearest-lattice projection in 2D value space.
-      Consecutive scalar weights are grouped into pairs, each pair is projected to the
-      nearest point on the A2 lattice, and the projected pairs are written back with the
-      original tensor shape. This yields genuine hexagonal geometry rather than a 1D offset grid.
-    </p>
-
-    <h4>Quasicrystalline</h4>
-    <p>
-      A 1D cut-and-project lattice following a Penrose-style construction. Integers are projected
-      onto the line <em>y = x/&phi;</em> (where &phi; is the golden ratio) and the nearest projected
-      lattice point is selected. The resulting spacing is aperiodic but long-range ordered, with no
-      repeating unit cell—the defining property of a quasicrystal.
-    </p>
-    <p class="note" style="margin-top:0.5em">
-      <strong>Implementation note:</strong> the quasicrystalline projector uses an explicit
-      Fibonacci-grid nearest-point search and is idempotent
-      (<code>project(project(w)) == project(w)</code>).
-    </p>
-
-    <h3>2.3 Post-hoc Application</h3>
-    <p>
-      For a pretrained model, we load all weight tensors, apply the lattice projection, and
-      re-save the model. The operation is applied to all linear layer weights; embedding matrices
-      and layer norms are excluded. Total modification time for a 4B parameter model is under
-      two minutes on an M3 Ultra.
-    </p>
-    <p>
-      Quantized models (MLX 8-bit) require special handling: scale/bias tensors returned by
-      <code>mx.quantize</code> must be cast back to their original dtype before saving, and
-      SafeTensors metadata must include <code>{"format": "mlx"}</code> or downstream tools
-      will reject the file.
-    </p>
-
-    <h3>2.4 From-scratch Training with Lattice Constraints</h3>
-    <p>
-      For from-scratch training, projection is applied periodically during optimization
-      (every 10 steps in the current implementation) with an annealed blend toward the
-      lattice. Gradients flow on the unconstrained weights, while stored values are pulled
-      toward nearby lattice points over training.
-    </p>
-    <p>
-      We train a 123M parameter transformer on the Fineweb-Edu dataset using MLX on Apple
-      Silicon. The architecture is a standard decoder with rotary positional embeddings.
-    </p>
-  </section>
-
-  <!-- Experiments -->
-  <section id="experiments">
-    <h2>3. Experiments</h2>
-
-    <h3>3.1 Post-hoc Crystallization of Qwen3-4B</h3>
-    <p>
-      We apply all three crystal geometries to Qwen3-4B-Instruct (MLX 8-bit quantized) at
-      &sigma;&nbsp;=&nbsp;0.005 and evaluate on ARC-Challenge using the lm-evaluation-harness
-      with zero-shot chat completion.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th class="num">ARC-Challenge<br><small>n=1172</small></th>
-            <th class="num">&Delta; ARC</th>
-            <th class="num">MMLU avg<br><small>8 tasks, n=50</small></th>
-            <th class="num">&Delta; MMLU</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="highlight-row">
-            <td>Base (Qwen3-4B)</td>
-            <td class="num best">89.51%</td>
-            <td class="num">&mdash;</td>
-            <td class="num best">73.0%</td>
-            <td class="num">&mdash;</td>
-          </tr>
-          <tr>
-            <td>Cubic (&sigma;=0.005)</td>
-            <td class="num">89.25%</td>
-            <td class="num delta-neg">&minus;0.26pp</td>
-            <td class="num">70.2%</td>
-            <td class="num delta-neg">&minus;2.7pp</td>
-          </tr>
-          <tr>
-            <td>Hexagonal (&sigma;=0.005)</td>
-            <td class="num">89.25%</td>
-            <td class="num delta-neg">&minus;0.26pp</td>
-            <td class="num">72.2%</td>
-            <td class="num delta-neg">&minus;0.7pp</td>
-          </tr>
-          <tr>
-            <td>Quasicrystalline (&sigma;=0.005)</td>
-            <td class="num">88.65%</td>
-            <td class="num delta-neg">&minus;0.86pp</td>
-            <td class="num">71.0%</td>
-            <td class="num delta-neg">&minus;2.0pp</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      Across both benchmarks, crystallized models retain <strong>96–99% of base capability</strong>
-      at &sigma;&nbsp;=&nbsp;0.005 (6% average weight displacement). Hexagonal geometry achieves the
-      smallest MMLU degradation (&minus;0.7pp), while all three geometries remain within noise on ARC.
-      Notably, all crystallized models <em>outperform</em> base on high school psychology (92%&nbsp;&rarr;&nbsp;94%),
-      and hexagonal matches or beats base on four of eight MMLU subtasks.
-    </p>
-
-    <h3>3.2 MMLU Subtask Breakdown</h3>
-    <p>
-      8 representative subtasks (50 questions each) evaluated via direct chat API with
-      zero-shot single-letter prompting. Delta shown relative to base.
-    </p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Subtask</th>
-            <th class="num">Base</th>
-            <th class="num">Cubic</th>
-            <th class="num">Hex</th>
-            <th class="num">Quasi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Abstract Algebra</td>
-            <td class="num">48.0%</td>
-            <td class="num delta-neg">44.0% <small>(&minus;4)</small></td>
-            <td class="num delta-neg">42.0% <small>(&minus;6)</small></td>
-            <td class="num delta-neg">44.0% <small>(&minus;4)</small></td>
-          </tr>
-          <tr>
-            <td>High School Physics</td>
-            <td class="num">68.0%</td>
-            <td class="num">68.0% <small>(&nbsp;0)</small></td>
-            <td class="num delta-pos">70.0% <small>(+2)</small></td>
-            <td class="num">68.0% <small>(&nbsp;0)</small></td>
-          </tr>
-          <tr>
-            <td>College Biology</td>
-            <td class="num">84.0%</td>
-            <td class="num delta-neg">82.0% <small>(&minus;2)</small></td>
-            <td class="num delta-neg">82.0% <small>(&minus;2)</small></td>
-            <td class="num delta-neg">82.0% <small>(&minus;2)</small></td>
-          </tr>
-          <tr>
-            <td>College Computer Science</td>
-            <td class="num">68.0%</td>
-            <td class="num delta-neg">64.0% <small>(&minus;4)</small></td>
-            <td class="num">68.0% <small>(&nbsp;0)</small></td>
-            <td class="num delta-neg">62.0% <small>(&minus;6)</small></td>
-          </tr>
-          <tr>
-            <td>Formal Logic</td>
-            <td class="num">62.0%</td>
-            <td class="num delta-neg">56.0% <small>(&minus;6)</small></td>
-            <td class="num delta-pos">64.0% <small>(+2)</small></td>
-            <td class="num">62.0% <small>(&nbsp;0)</small></td>
-          </tr>
-          <tr>
-            <td>Clinical Knowledge</td>
-            <td class="num">80.0%</td>
-            <td class="num delta-neg">74.0% <small>(&minus;6)</small></td>
-            <td class="num delta-neg">74.0% <small>(&minus;6)</small></td>
-            <td class="num delta-neg">72.0% <small>(&minus;8)</small></td>
-          </tr>
-          <tr>
-            <td>World Religions</td>
-            <td class="num">82.0%</td>
-            <td class="num delta-neg">80.0% <small>(&minus;2)</small></td>
-            <td class="num delta-pos">84.0% <small>(+2)</small></td>
-            <td class="num delta-pos">84.0% <small>(+2)</small></td>
-          </tr>
-          <tr>
-            <td>High School Psychology</td>
-            <td class="num">92.0%</td>
-            <td class="num delta-pos">94.0% <small>(+2)</small></td>
-            <td class="num delta-pos">94.0% <small>(+2)</small></td>
-            <td class="num delta-pos">94.0% <small>(+2)</small></td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td><strong>Average</strong></td>
-            <td class="num"><strong>73.0%</strong></td>
-            <td class="num delta-neg"><strong>70.2%</strong> <small>(&minus;2.7)</small></td>
-            <td class="num delta-neg"><strong>72.2%</strong> <small>(&minus;0.7)</small></td>
-            <td class="num delta-neg"><strong>71.0%</strong> <small>(&minus;2.0)</small></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <h3>3.2 Scale Study</h3>
-    <p>
-      We sweep the displacement scale &sigma; across seven values for the quasicrystalline geometry,
-      measuring weight displacement, output divergence (word-type Jaccard similarity to base, lower = more
-      divergent), and coherence (type-token ratio of generated text).
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Displacement</th>
-            <th class="num">Jaccard Similarity &darr;</th>
-            <th class="num">Coherence</th>
-            <th>Character</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>0.001</code></td>
-            <td class="num">1.2%</td>
-            <td class="num">0.445</td>
-            <td class="num">0.547</td>
-            <td>Minimal divergence</td>
-          </tr>
-          <tr>
-            <td><code>0.002</code></td>
-            <td class="num">2.4%</td>
-            <td class="num">0.296</td>
-            <td class="num">0.529</td>
-            <td>Emerging divergence</td>
-          </tr>
-          <tr>
-            <td><code>0.005</code></td>
-            <td class="num">6.0%</td>
-            <td class="num">0.377</td>
-            <td class="num">0.540</td>
-            <td>Non-monotonic&dagger;</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.010</code></td>
-            <td class="num">11.9%</td>
-            <td class="num">0.252</td>
-            <td class="num">0.569</td>
-            <td>&#x2713; Sweet spot</td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.020</code></td>
-            <td class="num">22.9%</td>
-            <td class="num">0.132</td>
-            <td class="num">0.374</td>
-            <td>&#x26A0; Coherence cliff</td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.050</code></td>
-            <td class="num">54.6%</td>
-            <td class="num">0.028</td>
-            <td class="num">0.187</td>
-            <td>Severe degradation</td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.100</code></td>
-            <td class="num">86.7%</td>
-            <td class="num">0.000</td>
-            <td class="num">0.045</td>
-            <td>Incoherent output</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p style="font-size: 13px; color: var(--text-muted);">
-      &dagger; The non-monotonic Jaccard at &sigma;=0.005 (higher similarity than &sigma;=0.002)
-      suggests that mid-range perturbations may preserve semantic content while altering surface
-      form, a pattern worth investigating further.
-    </p>
-
-    <div class="insight">
-      <strong>Key finding</strong>
-      The coherence cliff between &sigma;=0.010 (coherence 0.569) and &sigma;=0.020 (coherence 0.374)
-      is abrupt—a 34% drop for a 13% increase in displacement. This suggests a critical threshold
-      in the model's ability to route through lattice-perturbed weights, and defines a practical
-      operating envelope for post-hoc crystallization.
-    </div>
-
-    <h3>3.3 From-scratch Training</h3>
-    <p>
-      We train 123M parameter models from random initialization under both quasicrystalline lattice
-      constraints and an unconstrained (amorphous) baseline. Both models are trained on 164M tokens
-      from the Fineweb-Edu dataset for 15,000 steps at 14k tokens/sec on an M3 Ultra.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th class="num">Parameters</th>
-            <th class="num">Tokens</th>
-            <th class="num">Final Loss</th>
-            <th>Observed Attractor</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Amorphous (baseline)</td>
-            <td class="num">123M</td>
-            <td class="num">164M</td>
-            <td class="num">4.003</td>
-            <td>"you can't do anything" loops — grammatically coherent repetition</td>
-          </tr>
-          <tr>
-            <td>Quasicrystalline</td>
-            <td class="num">123M</td>
-            <td class="num">164M</td>
-            <td class="num">~5.98</td>
-            <td>"I am my my my" — fragmented comma cascades, different structural pattern</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      Both models are undertrained (the Chinchilla-optimal token budget for 123M parameters is
-      approximately 2.5B tokens). However, the models converge to <em>different</em> degenerate
-      attractors: the amorphous baseline falls into grammatically fluent but semantically empty
-      repetition, while the quasicrystalline model produces a structurally distinct failure mode
-      with shorter, fragmented patterns. This distinction persists across varied prompts and
-      suggests the geometry is influencing the loss landscape in a stable, reproducible way.
-    </p>
-
+  <section id="status">
+    <h2>Current Status</h2>
     <div class="note">
-      <strong>Status:</strong> Larger from-scratch scaling is currently paused. Current priority is
-      controlled post-hoc transfer testing and strict-versus-semantic benchmark characterization before
-      resuming high-cost training.
+      <strong>Phase:</strong> Post-hoc control mapping is active. Large scratch training is paused until control effects are replicated across families with matched baselines.
     </div>
-
-    <h3>3.4 Output Diversity — Qualitative</h3>
     <p>
-      At &sigma;=0.005, the post-hoc crystallized models respond to the same prompt with noticeably
-      different outputs. To illustrate, the scale study used a fixed set of creative prompts
-      including associative chains, dream-logic vignettes, and geometric poetry. The base model's
-      response to "write a poem contrasting liquid and crystal" produced structured quatrains
-      with direct metaphor; crystallized variants produced different rhythmic choices, different
-      associative leaps, and different conclusions—while remaining coherent and on-topic.
-    </p>
-    <p>
-      Systematic personality/style evaluation (e.g., Big Five trait assessment across diverse
-      prompt sets, inter-prompt consistency measurement) is planned as next-step validation.
-    </p>
-
-    <h3>3.5 Additional Benchmarks (2026-03-01 Update)</h3>
-    <p>
-      We added two additional benchmark blocks to test whether post-hoc geometry effects are
-      concentrated in specific layer families and whether strict-format sensitivity differs from
-      semantic correctness.
-    </p>
-
-    <h4>Experiment 2: Module-Target Sweep (Qwen3-4B, quasicrystalline, &sigma;=0.005)</h4>
-    <p>
-      Four targeted edits were compared against base: <code>attn</code>, <code>mlp</code>,
-      <code>both</code>, and <code>all</code>. In this run, quick and full benchmark outcomes
-      matched base exactly at pass/fail resolution.
-    </p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Condition</th>
-            <th class="num">Quick (8 tasks)</th>
-            <th class="num">Full (16 tasks)</th>
-            <th class="num">&Delta; vs base</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="highlight-row"><td>Base</td><td class="num">7/8 (87.5%)</td><td class="num">16/16 (100%)</td><td class="num">&mdash;</td></tr>
-          <tr><td>attn</td><td class="num">7/8 (87.5%)</td><td class="num">16/16 (100%)</td><td class="num">0.0pp</td></tr>
-          <tr><td>mlp</td><td class="num">7/8 (87.5%)</td><td class="num">16/16 (100%)</td><td class="num">0.0pp</td></tr>
-          <tr><td>both</td><td class="num">7/8 (87.5%)</td><td class="num">16/16 (100%)</td><td class="num">0.0pp</td></tr>
-          <tr><td>all</td><td class="num">7/8 (87.5%)</td><td class="num">16/16 (100%)</td><td class="num">0.0pp</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h4>Strict+Semantic Dual Snapshot (5-model set, 500 tasks/model)</h4>
-    <p>
-      A stricter local harness separates exact-format correctness (<em>strict</em>) from
-      meaning-level correctness (<em>semantic</em>) across five model variants.
-    </p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th class="num">Strict</th>
-            <th class="num">Semantic</th>
-            <th class="num">Strict &Delta; vs base</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="highlight-row"><td>base</td><td class="num">68.2%</td><td class="num">94.2%</td><td class="num">&mdash;</td></tr>
-          <tr><td>attn</td><td class="num">68.0%</td><td class="num">94.0%</td><td class="num delta-neg">&minus;0.2pp</td></tr>
-          <tr><td>mlp</td><td class="num">63.8%</td><td class="num">92.8%</td><td class="num delta-neg">&minus;4.4pp</td></tr>
-          <tr><td>both</td><td class="num">60.2%</td><td class="num">93.4%</td><td class="num delta-neg">&minus;8.0pp</td></tr>
-          <tr><td>all</td><td class="num">60.2%</td><td class="num">93.4%</td><td class="num delta-neg">&minus;8.0pp</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size: 13px; color: var(--text-muted);">
-      Result interpretation: semantic correctness remains high across conditions, while strict
-      format-compliance degrades as perturbation scope widens (especially <code>both</code>/<code>all</code>).
-      This supports a "surface-control with constraint tradeoff" framing rather than a pure
-      capability-preservation claim.
-    </p>
-
-    <h4>Cross-Family Calibration Pilot (non-Qwen bf16, exploratory)</h4>
-    <p>
-      A cross-family pilot on a non-Qwen bf16 model showed that a fixed absolute perturbation scale
-      does not transfer reliably across families. With uncalibrated perturbation magnitude, the
-      crystallized model collapsed on a quick 8-task check. After displacement calibration into the
-      same operating envelope used in successful Qwen runs, performance recovered.
-    </p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Condition (same base family)</th>
-            <th class="num">Mean displacement</th>
-            <th class="num">Quick score (8 tasks)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Base</td><td class="num">&mdash;</td><td class="num">6/8 (75.0%)</td></tr>
-          <tr><td>Crystal, uncalibrated scale</td><td class="num">~54%</td><td class="num">0/8 (0.0%)</td></tr>
-          <tr class="highlight-row"><td>Crystal, displacement-calibrated</td><td class="num">~9%</td><td class="num">7/8 (87.5%)</td></tr>
-          <tr><td>Gaussian, displacement-matched control</td><td class="num">~9%</td><td class="num">7/8 (87.5%)</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size: 13px; color: var(--text-muted);">
-      This pilot is small (n=8 prompts) and not a definitive capability claim. It does, however,
-      support displacement-normalized transfer as a key requirement for cross-family robustness.
-      In this quick lane, calibrated crystal and displacement-matched Gaussian tie; this means
-      geometry-specific advantage is not yet established in this family on this metric.
-      We report displacement regimes and outcomes here; detailed calibration recipes are deferred
-      pending broader robustness and misuse-risk characterization.
-    </p>
-
-    <h4>Follow-up Lifecycle Check (same family, 100 tasks)</h4>
-    <p>
-      A larger strict+semantic lifecycle check on the same three conditions shows the quick-lane tie
-      was not fully stable. The calibrated crystal remains close to base under strict scoring, while
-      displacement-matched Gaussian drops more on strict format compliance.
-    </p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Condition</th>
-            <th class="num">Strict (100)</th>
-            <th class="num">Semantic (100)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Base</td><td class="num">71/100 (71.0%)</td><td class="num">80/100 (80.0%)</td></tr>
-          <tr class="highlight-row"><td>Crystal, displacement-calibrated</td><td class="num">70/100 (70.0%)</td><td class="num">75/100 (75.0%)</td></tr>
-          <tr><td>Gaussian, displacement-matched</td><td class="num">63/100 (63.0%)</td><td class="num">76/100 (76.0%)</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size: 13px; color: var(--text-muted);">
-      Interpretation: in this family, displacement calibration is necessary for viability; geometry-specific
-      effects remain plausible but are not yet cleanly isolated across metrics and sample sizes.
+      This public report now prioritizes high-confidence claims tied to reproducible artifacts. Older narrative sections that were not fully synchronized with run history have been trimmed.
     </p>
   </section>
 
-  <!-- Geometry & Semantic Trajectories -->
-  <section id="geometry-trajectories">
-    <h2>4. Perturbation Geometry Selects Semantic Trajectory</h2>
-
-    <p>
-      The most striking finding from this work emerged from a control experiment designed
-      to falsify the central claim. A natural objection to any weight perturbation result
-      is that the observed effects are generic properties of perturbation near a decision
-      boundary—that any noise of sufficient magnitude would produce the same behavior,
-      and the crystal geometry is decorative.
-    </p>
-    <p>
-      To test this, we ran <strong>displacement-matched isotropic Gaussian noise</strong>
-      as a baseline: for each lattice scale &sigma;, we computed the Gaussian &sigma; that
-      produces the same average relative weight displacement, then ran identical prompts
-      with identical greedy decoding. If geometry is irrelevant, the trajectories should
-      match. They do not.
-    </p>
-
-    <h3>4.1 The Control Experiment</h3>
-    <p>
-      Using a word association probe—"give me the first word that comes to mind for X"
-      with greedy (temp=0) decoding—we measured how the model's primary association shifts
-      as displacement magnitude increases under three perturbation regimes: quasicrystalline
-      lattice, cubic lattice, and Gaussian noise.
-    </p>
-
-    <h4>Word: LATTICE</h4>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Displacement</th>
-            <th>Quasi</th>
-            <th>Cubic</th>
-            <th>Gaussian</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>base</code></td>
-            <td class="num">—</td>
-            <td colspan="3"><strong>grid</strong> — "a lattice and a grid are both structured arrangements of lines or points"</td>
-          </tr>
-          <tr>
-            <td><code>0.001</code></td>
-            <td class="num">1.2%</td>
-            <td>grid</td>
-            <td><strong>structure</strong></td>
-            <td>grid</td>
-          </tr>
-          <tr>
-            <td><code>0.002</code></td>
-            <td class="num">2.4%</td>
-            <td><strong>structure</strong></td>
-            <td>grid</td>
-            <td>grid</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.005</code></td>
-            <td class="num">6.0%</td>
-            <td>GRID</td>
-            <td><strong>CRYSTAL</strong></td>
-            <td>GRID</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.010</code></td>
-            <td class="num">11.9%</td>
-            <td><strong>crystal</strong></td>
-            <td><strong>MESH</strong></td>
-            <td>GRID</td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.020</code></td>
-            <td class="num">22.9%</td>
-            <td colspan="2"><em>coherence collapse</em></td>
-            <td><em>coherence collapse</em></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      Gaussian noise never leaves "grid" until coherence collapses entirely. Both lattice
-      methods traverse the semantic neighborhood — but via <em>different routes</em>. Cubic
-      reaches "crystal" first (at 6% displacement) then overshoots to "mesh." Quasi arrives
-      at "crystal" later (11.9%) and settles. They cross each other: at &sigma;=0.005, cubic
-      is on crystal while quasi has reverted to grid; at &sigma;=0.010 they have swapped.
-    </p>
-
-    <div class="insight">
-      <strong>Key observation</strong>
-      The divergence at &sigma;=0.002 is sharp. At 2.4% displacement, quasi has moved to
-      "structure" (an abstraction of grid) while Gaussian stays on "grid." The full output
-      text confirms: quasi's explanation invokes crystallography as a conceptual frame;
-      Gaussian's explanation stays at the visual/structural synonym level. Same displacement
-      magnitude, different semantic depth. The geometry is not just adding noise—it is
-      reranking within an existing neighborhood, promoting higher-abstraction neighbors
-      over surface-level ones.
-    </div>
-
-    <h3>4.2 Replication on a Geometry-Free Word</h3>
-    <p>
-      "Lattice" has direct semantic connections to the perturbation method. To rule out
-      neighborhood-specific confounding, we ran the same protocol on <strong>"dog"</strong>—
-      a high-frequency word with a strong, unambiguous primary association ("bark") and
-      no geometric content.
-    </p>
-
-    <h4>Word: DOG</h4>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Displacement</th>
-            <th>Quasi</th>
-            <th>Cubic</th>
-            <th>Gaussian</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>base</code></td>
-            <td class="num">—</td>
-            <td colspan="3"><strong>bark</strong> — "a dog is known for barking"</td>
-          </tr>
-          <tr>
-            <td><code>0.001</code></td><td class="num">1.2%</td>
-            <td>bark</td><td>bark</td><td>bark</td>
-          </tr>
-          <tr>
-            <td><code>0.002</code></td><td class="num">2.4%</td>
-            <td>bark</td><td>bark</td><td>bark</td>
-          </tr>
-          <tr>
-            <td><code>0.005</code></td><td class="num">6.0%</td>
-            <td>bark</td><td>bark</td><td>bark</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><code>0.010</code></td>
-            <td class="num">11.9%</td>
-            <td>bark</td>
-            <td><strong>CAT</strong></td>
-            <td><strong>fur</strong></td>
-          </tr>
-          <tr class="cliff-row">
-            <td><code>0.020</code></td>
-            <td class="num">22.9%</td>
-            <td colspan="3"><em>coherence collapse</em></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>
-      "Bark" is a stronger attractor than "grid" — all three methods hold it through 6%
-      displacement. At 11.9%, the methods diverge into <em>three interpretably distinct
-      types of association</em>:
-    </p>
-
-    <ul style="padding-left: 20px; margin-bottom: 20px;">
-      <li style="margin-bottom: 10px;">
-        <strong>Quasi → bark</strong> (unchanged): the aperiodic projection does not cross
-        the boundary at this scale. The primary behavioral association holds.
-      </li>
-      <li style="margin-bottom: 10px;">
-        <strong>Cubic → CAT</strong>: moves to the canonical <em>categorical neighbor</em>.
-        Dog and cat occupy the same semantic category (pet animals); cubic's orthogonal
-        axes appear to traverse the categorical dimension.
-      </li>
-      <li style="margin-bottom: 10px;">
-        <strong>Gaussian → fur</strong>: moves to a <em>perceptual/physical property</em>.
-        Isotropic noise degrades the relational structure and surfaces a feature of the
-        referent rather than a conceptual neighbor.
-      </li>
-    </ul>
-
-    <div class="insight">
-      <strong>Interpretation</strong>
-      The three perturbation methods are traversing different <em>dimensions</em> of the
-      semantic neighborhood simultaneously. Cubic selects categorical adjacency. Gaussian
-      selects perceptual salience. Quasi maintains the primary association deeper into
-      perturbation space before collapse. This is not consistent with a generic "noise
-      near a decision boundary" explanation—that account predicts the same trajectory
-      regardless of perturbation structure, differing only in rate. Instead, the geometry
-      of the perturbation appears to select which axes of the semantic space get traversed.
-    </div>
-
-    <h3>4.3 Coherence is Matched Across Methods</h3>
-    <p>
-      A critical control: the divergent trajectories are not explained by one method
-      degrading output quality faster than another. Coherence scores (type-token ratio
-      × length factor) are within measurement error across all three methods through
-      &sigma;=0.010. At &sigma;=0.020, methods diverge sharply. The geometry is changing
-      <em>direction</em>, not <em>energy</em>.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>&sigma;</th>
-            <th class="num">Quasi coherence</th>
-            <th class="num">Cubic coherence</th>
-            <th class="num">Gaussian coherence</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><code>0.001</code></td><td class="num">0.547</td><td class="num">0.544</td><td class="num">0.536</td></tr>
-          <tr><td><code>0.002</code></td><td class="num">0.529</td><td class="num">0.537</td><td class="num">0.570</td></tr>
-          <tr><td><code>0.005</code></td><td class="num">0.540</td><td class="num">0.516</td><td class="num">0.540</td></tr>
-          <tr><td><code>0.010</code></td><td class="num">0.569</td><td class="num">0.552</td><td class="num">0.571</td></tr>
-          <tr class="cliff-row"><td><code>0.020</code></td><td class="num">0.374</td><td class="num">0.544</td><td class="num">0.427</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:13px; color: var(--text-muted);">
-      Note: cubic maintains coherence at &sigma;=0.020 (0.544) while quasi and Gaussian
-      have collapsed (0.374, 0.427), consistent with orthogonal projections preserving
-      more independent weight dimensions deeper into perturbation space.
-    </p>
-
-    <h3>4.4 Full Word Battery</h3>
-    <p>
-      A 40-word battery covering diverse semantic categories (animals, objects, natural
-      phenomena, abstract concepts, and social roles) has completed.
-    </p>
-    <div class="note">
-      <strong>Status:</strong> Completed. The artifact contains 40 unique words (41 rows;
-      one duplicate prompt for <code>dog</code>). Aggregate trajectory-type analysis and
-      cleaned first-word extraction summaries will be published in the next revision.
-    </div>
-
-  </section>
-
-  <!-- Discussion -->
-  <section id="discussion">
-    <h2>5. Discussion</h2>
-
-    <h3>What this is</h3>
-    <p>
-      A post-hoc, zero-cost (at inference time) method for producing a family of behaviorally
-      distinct model variants from a single pretrained checkpoint. The capability cost is under
-      1% on ARC-Challenge at the operating scale, and the output divergence is substantial:
-      approximately 75% of generated words (set-based word-type Jaccard divergence) differ between
-      the base model and quasicrystalline variant at &sigma;=0.005.
-    </p>
-
-    <h3>What this is not (yet)</h3>
-    <p>
-      A proven method for <em>controllable</em> personality modification. We can demonstrate that
-      crystallized models are different from the base and from each other, but we have not yet
-      demonstrated that specific geometries reliably produce specific, predictable behavioral
-      shifts. The relationship between crystal symmetry and behavioral character is the open
-      scientific question.
-    </p>
-
-    <h3>Relation to prior work</h3>
-    <p>
-      <strong>Activation steering / representation engineering</strong> (Zou et al., 2023; Turner
-      et al., 2023) modifies model behavior by adding vectors to residual stream activations at
-      inference time. TEMPLE operates in weight space instead, eliminating per-token overhead.
-    </p>
-    <p>
-      <strong>LoRA / DPO / RLHF</strong> require supervised data and training compute. TEMPLE
-      requires neither—it is a deterministic weight transformation.
-    </p>
-    <p>
-      <strong>Weight quantization</strong> is structurally similar (snapping weights to discrete
-      values) but motivated by memory reduction rather than behavioral diversity. Quantization
-      uses uniform grids (cubic); TEMPLE's contribution is exploring non-cubic symmetries and
-      framing the operation as behavioral parameterization rather than compression.
-    </p>
-
-    <h3>Disclosure stance</h3>
-    <p>
-      We follow staged disclosure: publish aggregate evidence, controls, and reproducible evaluation
-      criteria early; delay release of optimization details that materially increase steering power
-      until robustness and misuse-risk characterization are stronger.
-    </p>
-    <p>
-      The goal is scientific transparency about effects and limits while reducing premature release
-      of techniques that are not yet well-calibrated across model families and use cases.
-    </p>
-
-    <h3>Limitations</h3>
-    <ul style="padding-left: 20px; margin-bottom: 14px;">
-      <li style="margin-bottom: 8px;">Primary quantitative results are still dominated by a single model family (Qwen3-4B). Cross-family transfer has an encouraging non-Qwen pilot, but broader validation (vision-capable Qwen, Qwen3.5 bf16, multiple non-Qwen controls) remains partial.</li>
-      <li style="margin-bottom: 8px;">In the non-Qwen quick lane, calibrated crystal and displacement-matched Gaussian currently tie; additional controls are required before attributing cross-family gains to geometry itself.</li>
-      <li style="margin-bottom: 8px;">Cross-family conclusions are metric-sensitive: quick probes and larger strict+semantic lanes can disagree, so claims must be qualified by evaluation regime.</li>
-      <li style="margin-bottom: 8px;">The from-scratch models are severely undertrained; attractor differences may not generalize to well-trained models.</li>
-      <li style="margin-bottom: 8px;">"Behavioral diversity" is currently measured by word-type Jaccard overlap (set-based, not subword-token-level)—a shallow metric. Human evaluation and semantic consistency studies are needed.</li>
-      <li style="margin-bottom: 8px;">The non-monotonic scale behavior at &sigma;=0.005 is unexplained.</li>
-      <li style="margin-bottom: 8px;">Operationally, this environment requires explicit model lifecycle management; reproducibility depends on deterministic load/unload control.</li>
+  <section id="what-we-know">
+    <h2>What We Know Now</h2>
+    <ul class="flat-list">
+      <li>Displacement calibration is mandatory for cross-family transfer. Fixed absolute perturbation scales do not transfer reliably.</li>
+      <li>In the Devstral family, calibrated crystal variants consistently outperform displacement-matched Gaussian controls on strict-format robustness in repeated 500-task runs.</li>
+      <li>A stricter semantic scorer for one-word tasks removed a known permissiveness artifact and reduced inflated semantic scores in Gaussian controls.</li>
+      <li>A structured orthogonal control at matched displacement did not preserve behavior as well as calibrated crystal in the latest 4-way run.</li>
+      <li>In Qwen3-4B, strict behavior direction is inverted relative to Devstral: matched controls score above base on strict format across three seeds.</li>
     </ul>
   </section>
 
-  <!-- Future Work -->
-  <section id="future">
-    <h2>6. Future Work</h2>
+  <section id="what-unknown">
+    <h2>What Is Still Open</h2>
+    <ul class="flat-list">
+      <li>Whether the observed effects generalize across more model families and sizes.</li>
+      <li>Whether geometric method effects remain superior after full control matching and seed replication in every lane.</li>
+      <li>Whether the effect is mostly a format/style control, or can be made to steer deeper reasoning behavior with low capability cost.</li>
+    </ul>
+  </section>
 
+  <section id="highlights">
+    <h2>Evidence Snapshot</h2>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Experiment</th><th>Status</th><th>Hypothesis</th></tr>
+          <tr>
+            <th>Block</th>
+            <th class="num">Finding</th>
+            <th>Interpretation</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
-            <td>GSM8K + MMLU (4B post-hoc)</td>
-            <td><span class="badge badge-running">Partially complete</span></td>
-            <td>Crystallized models will score within 2% of base on math/knowledge benchmarks</td>
+            <td>Qwen3-4B post-hoc ARC</td>
+            <td class="num">Base 89.51%, quasi 88.65%</td>
+            <td>Small accuracy deltas at moderate perturbation.</td>
           </tr>
           <tr>
-            <td>1B quasicrystalline from-scratch</td>
-            <td><span class="badge badge-planned">Paused</span></td>
-            <td>Resume only after controlled post-hoc knob mapping establishes clear, testable targets</td>
+            <td>Devstral 4-way replicated (3x500)</td>
+            <td class="num">Strict mean: base 70.47, calib 71.40, gauss 63.80, orth 63.13</td>
+            <td>Orth remains weakest; crystal stays closest to base under strict scoring.</td>
           </tr>
           <tr>
-            <td>Personality consistency study</td>
-            <td><span class="badge badge-planned">Planned</span></td>
-            <td>Each geometry will show consistent directional shifts across diverse prompts</td>
+            <td>Second-model check (2505, 3x500)</td>
+            <td class="num">Strict mean: base 75.33, calib 70.53, gauss 62.53, orth 62.13</td>
+            <td>Pattern extends to a second model with seed replication.</td>
           </tr>
           <tr>
-            <td>Crystalline model fusion</td>
-            <td><span class="badge badge-planned">Planned</span></td>
-            <td>Models sharing a lattice coordinate system may merge more cohesively than amorphous variants</td>
+            <td>Qwen3-4B 4-way replicated (3x500)</td>
+            <td class="num">Strict mean: base 64.13, calib 67.80, gauss 68.60, orth 68.07</td>
+            <td>Family-dependent direction: all controls above base on strict in this lane.</td>
           </tr>
           <tr>
-            <td>Multi-family validation (Qwen VL + Qwen3.5 + non-Qwen bf16)</td>
-            <td><span class="badge badge-running">In progress (early positive pilot)</span></td>
-            <td>Displacement-normalized post-hoc rearrangement can preserve behavior across families; fixed absolute perturbation scales do not reliably transfer</td>
-          </tr>
-          <tr>
-            <td>Knob map (geometry × layer target × scale)</td>
-            <td><span class="badge badge-running">In progress</span></td>
-            <td>Identify controllable regions where semantic behavior remains stable while style/format trajectories shift predictably</td>
-          </tr>
-          <tr>
-            <td>Directed geometry design</td>
-            <td><span class="badge badge-planned">Planned</span></td>
-            <td>Custom lattice symmetries can be designed to target specific behavioral properties</td>
+            <td>Strict+semantic module sweep (5-model, 500 tasks)</td>
+            <td class="num">Base strict 68.2%, both/all 60.2%</td>
+            <td>Wider edit scope reduces strict compliance faster than semantic pass rate.</td>
           </tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- BibTeX -->
-  <section id="bibtex">
+  <section id="disclosure">
+    <h2>Disclosure Boundary</h2>
+    <p>
+      Public pages include outcomes, controls, caveats, and decision criteria. They exclude implementation details that materially increase steering precision until robustness and misuse-risk characterization are stronger.
+    </p>
+  </section>
+
+  <section id="citation">
     <h2>Citation</h2>
-    <p>If you find this work useful, please cite:</p>
     <div class="bibtex">@misc{temple2026,<br>
-&nbsp;&nbsp;title={TEMPLE: Crystallographic Projections in Neural Network Weight Space},<br>
+&nbsp;&nbsp;title={TEMPLE: Geometric Rearrangement in Neural Weight Space},<br>
 &nbsp;&nbsp;author={Andrew Ewing},<br>
 &nbsp;&nbsp;year={2026},<br>
 &nbsp;&nbsp;url={https://github.com/vibesdotdev/temple},<br>
 &nbsp;&nbsp;note={Independent research report}<br>
 }</div>
   </section>
-
 </main>
 
 <footer>
-  TEMPLE &mdash; 2026 &mdash;
-  <a href="https://github.com/vibesdotdev/temple">github.com/vibesdotdev/temple</a>
+  TEMPLE - 2026 - <a href="https://github.com/vibesdotdev/temple">github.com/vibesdotdev/temple</a>
 </footer>
-
 </body>
 </html>
